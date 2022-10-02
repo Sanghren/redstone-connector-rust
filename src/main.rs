@@ -1,7 +1,8 @@
 mod log;
 
 use std::error::Error;
-use ::log::{error, trace};
+use std::path::Path;
+use ::log::{debug, error, trace};
 use ethers::prelude::*;
 use ethers::utils::Anvil;
 use ethers_providers::{Provider, Ws};
@@ -16,16 +17,23 @@ use std::sync::Arc;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     setup_logger("redstone_connector_rust")?;
-    let anvil_instance = Anvil::at("/Users/sanghren/.foundry/bin/anvil").spawn();
+    let anvil_instance = Anvil::at("/home/xxx/.foundry/bin/anvil").fork("http://10.8.0.1:9650/ext/bc/C/rpc").spawn();
     let ws = Ws::connect(anvil_instance.ws_endpoint()).await?;
     let provider = Provider::new(ws);
-    let compiled = Solc::default().compile_source("./tests/contract.sol").unwrap();
-    let contract = compiled
-        .get("./abi/example-avalanche-prod-flattened.sol.sol", "AvalancheProd")
-        .expect("could not find contract");
-
+    let source = Path::new(&env!("CARGO_MANIFEST_DIR")).join("contracts/example-avalanche-prod-flattened.sol");
+    debug!("PATH {:?}", source.as_path());
+    let compiled = Solc::default().compile_source(source).expect("Could not compile contracts");
+    debug!("COMPILKED {:?}", compiled);
     let (abi, bytecode, _runtime_bytecode) =
-        compiled.find("AvalancheProd").expect("could not find contract").into_parts_or_default();
+        compiled.find("ExampleContractAvalancheProd").expect("could not find contract").into_parts_or_default();
+    // let compiled = Solc::default().compile_source("../contracts/example-avalanche-prod-flattened.sol").unwrap();
+    // let contract = compiled
+    //     .get("../contracts/example-avalanche-prod-flattened.sol", "ExampleContractAvalancheProd")
+    //     .expect("could not find contract");
+    //
+    // let (abi, bytecode, _runtime_bytecode) =
+    //     compiled.find("AvalancheProd").expect("could not find contract").into_parts_or_default();
+    //
 
     // 2. instantiate our wallet
     let wallet: LocalWallet = anvil_instance.keys()[0].clone().into();
@@ -35,7 +43,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Provider::<Http>::try_from(anvil_instance.endpoint())?.interval(Duration::from_millis(10u64));
 
     // 4. instantiate the client with the wallet
-    let client = SignerMiddleware::new(provider, wallet.with_chain_id(43114));
+    let client = SignerMiddleware::new(provider, wallet.with_chain_id(43114 as u64));
     let client = Arc::new(client);
 
     // 5. create a factory which will be used to deploy instances of the contract

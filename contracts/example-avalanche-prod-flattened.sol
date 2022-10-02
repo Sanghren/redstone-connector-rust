@@ -1,8 +1,8 @@
 // Sources flattened with hardhat v2.9.9 https://hardhat.org
-
+// SPDX-License-Identifier: MIT
 // File @openzeppelin/contracts/utils/Strings.sol@v4.4.2
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts v4.4.1 (utils/Strings.sol)
 
 pragma solidity ^0.8.0;
@@ -73,7 +73,7 @@ library Strings {
 
 // File @openzeppelin/contracts/utils/cryptography/ECDSA.sol@v4.4.2
 
-// SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts v4.4.1 (utils/cryptography/ECDSA.sol)
 
 pragma solidity ^0.8.0;
@@ -309,7 +309,7 @@ library ECDSA {
 
 // File redstone-evm-connector/lib/contracts/message-based/PriceAware.sol@v2.1.21
 
-// SPDX-License-Identifier: MIT
+
 
 pragma solidity ^0.8.2;
 
@@ -469,7 +469,7 @@ abstract contract PriceAware {
 
 // File contracts/example-avalanche-prod.sol
 
-// SPDX-License-Identifier: MIT
+
 
 pragma solidity ^0.8.2;
 
