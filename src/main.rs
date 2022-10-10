@@ -66,13 +66,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // let tx = TransactionRequest::new()
     //     .to(contract.address())
     //     //ToDo How to craft this data payload
-    //     .data(Bytes::from(hex!("da93d0d1415641580000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000635a5dee00000000000000000000000000000000000000000000000000000000633aa2ae018c5178cbda618691087fd972b2990c24c0c21340869f5b703122287de0ad2d6517e4570385332705ee8a81debe377c97a6490e35fa1608bd24af25bf8e2d09281c")))
+    //     .data(Bytes::from(hex!("da93d0d141564158000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000063b2a06c000000000000000000000000000000000000000000000000000000006343ed3b01b5cd0cabe77e0690352a1049316d942813ae50f59d3e55f892773151494a8a4957fba2e5b28eb904567c20ec530f9dd6532bae9a66250e5417c9b74fbe2046091c")))
     //                                                                                                                                                                                                                                       // 140c2edbb7f39397c5a9d6a25cb488e6db65f5befdfe92467997990ba5d249e9452f3e40eac910cc6e95039f3eb7f6c290e20c111fbf9e7f55a30bdc7732cf2e1b
     //     .chain_id(43114);
     // let receipt =
     //     client.clone().send_transaction(tx, None).await.unwrap().await.unwrap().unwrap();
     // debug!("ATCHOUM - {:?}", receipt);
-    //
+
     // let res = instance.get_last_price().call().await?;
     // debug!("res {:?}", res);
     // trace!("Logger initialized");
@@ -88,6 +88,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let price_response: Vec<ResponseApi> = response.json().await?;
     trace!("Raw JSON response for ResponseApi<TeamResult>: {:?}", price_response);
 
+    // Prepare the SerializedData
+    let mut serialized_data = SerializedPriceData {
+        symbols: vec![],
+        values: vec![],
+        timestamp: 0
+    };
+
+    serialized_data.timestamp = price_response.get(0).unwrap().timestamp.unwrap();
+    serialized_data.symbols.push(price_response.get(0).unwrap().symbol.clone().unwrap());
+    serialized_data.values.push(price_response.get(0).unwrap().value.unwrap());
+
+    get_lite_data_bytes_string(serialized_data);
     Ok(())
 }
 
@@ -98,6 +110,7 @@ pub fn compile_contract(name: &str, filename: &str) -> (Abi, Bytes) {
     let (abi, bin, _) = contract.into_parts_or_default();
     (abi, bin)
 }
+// 4156415800000000000000000000000000000000000000000000000000000000
 
 pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
     let mut data = String::new();
@@ -105,8 +118,10 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
     for (index, symbol) in price_data.symbols.into_iter().enumerate() {
         let symbol = symbol;
         let value = price_data.values.get(index).unwrap();
-        let mut b32 = format!("{:?}", ethers::utils::format_bytes32_string(&*symbol).unwrap());
-        data += &*b32
+        let mut b32 = format!("{:02X?}", ethers::utils::format_bytes32_string(symbol.as_str()).unwrap());
+        // data += &*b32;
+
+        println!("OYYYYYYH {:02X?}", ethers::utils::format_bytes32_string(&*symbol).unwrap());
     }
 
     data
@@ -130,9 +145,9 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
 // }
 
 
-struct SerializedPriceData {
+pub struct SerializedPriceData {
     symbols: Vec<String>,
-    values: Vec<u64>,
+    values: Vec<f64>,
     timestamp: u64
 }
 
