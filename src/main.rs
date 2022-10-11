@@ -13,6 +13,8 @@ use crate::abi::Abi;
 use ethers_solc::Solc;
 use tokio::time::{sleep, Duration};
 use std::sync::Arc;
+use ethers::abi::AbiEncode;
+use hex::ToHex;
 abigen!(ExampleContractAvalancheProd, "./abi/example_contract_avalanche_prod.abi");
 use hex_literal::hex;
 use reqwest::header::{CACHE_CONTROL, CONTENT_TYPE, PRAGMA, USER_AGENT};
@@ -97,7 +99,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     serialized_data.timestamp = price_response.get(0).unwrap().timestamp.unwrap();
     serialized_data.symbols.push(price_response.get(0).unwrap().symbol.clone().unwrap());
-    serialized_data.values.push(price_response.get(0).unwrap().value.unwrap());
+    // let vv = (price_response.get(0).unwrap().value.unwrap() * 1000000.) as u64;
+    let vv = 1603300000;
+    serialized_data.values.push(vv);
 
     get_lite_data_bytes_string(serialized_data);
     Ok(())
@@ -117,18 +121,43 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
 
     for (index, symbol) in price_data.symbols.into_iter().enumerate() {
         let symbol = symbol;
-        let value = price_data.values.get(index).unwrap();
-        let mut b32 = format!("{:02X?}", ethers::utils::format_bytes32_string(symbol.as_str()).unwrap());
-        // data += &*b32;
+        // let value = price_data.values.get(index).unwrap();
+        let value = 1603000000;
+        let b32 = ethers::utils::format_bytes32_string(&*symbol).unwrap();
+        let b32_hex = b32.encode_hex();
+        let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
+        data += b32_hex_stripped;
+        data += value.encode_hex().strip_prefix("0x").unwrap();
 
-        println!("OYYYYYYH {:02X?}", ethers::utils::format_bytes32_string(&*symbol).unwrap());
+
+        // let timestamp = price_data.timestamp / 1000;
+        let timestamp = 1665487114642_u64 / 1000;
+        let timestamp_hex = timestamp.encode_hex();
+        let timestamp_hex_stripped = timestamp_hex.strip_prefix("0x").unwrap();
+
+        data += timestamp_hex_stripped;
+
+        let len_str = format!("{}", price_data.values.len());
+        println!("OYYYYYYH {}", len_str);
+
+
+        let len_str_enc = len_str.encode_hex();
+        let ddd = len_str_enc.strip_prefix("0x").unwrap();
+        println!("OYYYYYYH {}", len_str_enc.clone());
+
+        println!("OYYYYYYH {}", ddd.clone());
+        data += ddd;
+
+        println!("OYYYYYYH {:02X?}", ethers::utils::format_bytes32_string(&*symbol).unwrap().encode_hex().strip_prefix("0x"));
+        println!("OYYYYYYH - 2 {:?}", value.encode_hex().strip_prefix("0x"));
+        println!("OYYYYYYH - 2 {:?}", data);
     }
 
     data
 }
 
-
-
+// 4156415800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f8bd6c0000000000000000000000000000000000000000000000000000000006345510a000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000013100000000000000000000000000000000000000000000000000000000000000
+// 4156415800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f8bd6c0000000000000000000000000000000000000000000000000000000006345510b01dc6f1c3318f59302089722e3f98d17b8ca43f4e56b345066dcf2915f0c2b6a8553dc8d86b6be7c1d378a4054a093d5b83fca13863c81987c83137b2448f203b11c
 // getLiteDataBytesString(priceData: SerializedPriceData): string {
 // // Calculating lite price data bytes array
 // let data = "";
@@ -147,7 +176,7 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
 
 pub struct SerializedPriceData {
     symbols: Vec<String>,
-    values: Vec<f64>,
+    values: Vec<u64>,
     timestamp: u64
 }
 
