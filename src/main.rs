@@ -23,9 +23,9 @@ use crate::rest::ResponseApi;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     setup_logger("redstone_connector_rust")?;
-    let anvil_instance = Anvil::at("/home/tbrunain/.foundry/bin/anvil").fork("http://10.8.0.1:9650/ext/bc/C/rpc").spawn();
-    let ws = Ws::connect(anvil_instance.ws_endpoint()).await?;
-    let provider = Provider::new(ws);
+    // let anvil_instance = Anvil::at("/Users/sanghren/.foundry/bin/anvil").fork("http://10.8.0.1:9650/ext/bc/C/rpc").spawn();
+    // let ws = Ws::connect(anvil_instance.ws_endpoint()).await?;
+    // let provider = Provider::new(ws);
     let source = Path::new(&env!("CARGO_MANIFEST_DIR")).join("contracts/example-avalanche-prod-flattened.sol");
     debug!("PATH {:?}", source.as_path());
     let compiled = Solc::default().compile_source(source).expect("Could not compile contracts");
@@ -44,24 +44,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
     //
 
     // 2. instantiate our wallet
-    let wallet: LocalWallet = anvil_instance.keys()[0].clone().into();
-    debug!("C");
-    // 3. connect to the network
-    let provider =
-        Provider::<Http>::try_from(anvil_instance.endpoint())?.interval(Duration::from_millis(10u64));
-    debug!("D");
-    // 4. instantiate the client with the wallet
-    let client = SignerMiddleware::new(provider, wallet.with_chain_id(43114 as u64));
-    let client = Arc::new(client);
-    debug!("E");
-    // 5. create a factory which will be used to deploy instances of the contract
-    let factory = ContractFactory::new(abi, bytecode, client.clone());
-    debug!("F");
-    // 6. deploy it with the constructor arguments
-    let contract = factory.deploy(())?.send().await?;
-    debug!("Address {:?}", contract.address());
-    debug!("Method {:?}", contract);
-    let instance = ExampleContractAvalancheProd::new(contract.address(), client.clone());
+    // let wallet: LocalWallet = anvil_instance.keys()[0].clone().into();
+    // debug!("C");
+    // // 3. connect to the network
+    // let provider =
+    //     Provider::<Http>::try_from(anvil_instance.endpoint())?.interval(Duration::from_millis(10u64));
+    // debug!("D");
+    // // 4. instantiate the client with the wallet
+    // let client = SignerMiddleware::new(provider, wallet.with_chain_id(43114 as u64));
+    // let client = Arc::new(client);
+    // debug!("E");
+    // // 5. create a factory which will be used to deploy instances of the contract
+    // let factory = ContractFactory::new(abi, bytecode, client.clone());
+    // debug!("F");
+    // // 6. deploy it with the constructor arguments
+    // let contract = factory.deploy(())?.send().await?;
+    // debug!("Address {:?}", contract.address());
+    // debug!("Method {:?}", contract);
+    // let instance = ExampleContractAvalancheProd::new(contract.address(), client.clone());
 
     // Data here is crafted from redstone connector . I just copy pasted the data generate by the ts lib.
     // It is timestamped
@@ -94,7 +94,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut serialized_data = SerializedPriceData {
         symbols: vec![],
         values: vec![],
-        timestamp: 0
+        timestamp: 0,
+        lite_sig: String::new()
     };
 
     serialized_data.timestamp = price_response.get(0).unwrap().timestamp.unwrap();
@@ -102,6 +103,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // let vv = (price_response.get(0).unwrap().value.unwrap() * 1000000.) as u64;
     let vv = 1603300000;
     serialized_data.values.push(vv);
+    serialized_data.lite_sig = price_response.get(0).unwrap().lite_evm_signature.clone().unwrap();
 
     get_lite_data_bytes_string(serialized_data);
     Ok(())
@@ -137,16 +139,15 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
 
         data += timestamp_hex_stripped;
 
-        let len_str = format!("{}", price_data.values.len());
-        println!("OYYYYYYH {}", len_str);
+        let len_hex = format!("{:#04x}", price_data.values.len());
+        let len_hex = len_hex.strip_prefix("0x").unwrap();
 
+        data += len_hex;
 
-        let len_str_enc = len_str.encode_hex();
-        let ddd = len_str_enc.strip_prefix("0x").unwrap();
-        println!("OYYYYYYH {}", len_str_enc.clone());
+        let lite_sig = price_data.lite_sig.clone();
+        let lite_sig = lite_sig.strip_prefix("0x").unwrap();
 
-        println!("OYYYYYYH {}", ddd.clone());
-        data += ddd;
+        data += lite_sig;
 
         println!("OYYYYYYH {:02X?}", ethers::utils::format_bytes32_string(&*symbol).unwrap().encode_hex().strip_prefix("0x"));
         println!("OYYYYYYH - 2 {:?}", value.encode_hex().strip_prefix("0x"));
@@ -156,7 +157,8 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
     data
 }
 
-// 4156415800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f8bd6c0000000000000000000000000000000000000000000000000000000006345510a000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000013100000000000000000000000000000000000000000000000000000000000000
+// 4156415800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f8bd6c0000000000000000000000000000000000000000000000000000000006345510a0182d530263f8c2c6f8280187f98b74f3788f8dcc816972558cee07a3cad4926fb69da82d4c97092347ac1a4df6481b953c7b97f974fc79a38ad98b7742f3fddd71c
+// 4156415800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f8bd6c0000000000000000000000000000000000000000000000000000000006345510a01efcd7f6593e18e46f9a04842ff620c69df806fa92a1939dafbc166484e6e6b4b7c35a71c51e285fcf00a8a5b2e0e6b95c6a31023be2c98acdeb098c196db7dfb1b
 // 4156415800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f8bd6c0000000000000000000000000000000000000000000000000000000006345510b01dc6f1c3318f59302089722e3f98d17b8ca43f4e56b345066dcf2915f0c2b6a8553dc8d86b6be7c1d378a4054a093d5b83fca13863c81987c83137b2448f203b11c
 // getLiteDataBytesString(priceData: SerializedPriceData): string {
 // // Calculating lite price data bytes array
@@ -177,7 +179,8 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
 pub struct SerializedPriceData {
     symbols: Vec<String>,
     values: Vec<u64>,
-    timestamp: u64
+    timestamp: u64,
+    lite_sig: String
 }
 
 // export interface SerializedPriceData {
