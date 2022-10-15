@@ -72,7 +72,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // It is timestamped
 
     let req_client = reqwest::Client::new();
-    let response = req_client.get("https://api.redstone.finance/prices?symbol=AVAX&provider=redstone&limit=1")
+    let response = req_client.get("https://api.redstone.finance/prices?symbol=AVAX&provider=redstone-avalanche-prod-1&limit=1")
         .header(USER_AGENT, "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36")
         .header(CONTENT_TYPE, "application/json")
         .header(CACHE_CONTROL, "no-store")
@@ -92,8 +92,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     serialized_data.timestamp = price_response.get(0).unwrap().timestamp.unwrap();
     serialized_data.symbols.push(price_response.get(0).unwrap().symbol.clone().unwrap());
-    // let vv = (price_response.get(0).unwrap().value.unwrap() * 1000000.) as u64;
-    let vv = 1603300000;
+    let vv = (price_response.get(0).unwrap().value.unwrap() * 1000000.) as u64;
+    // let vv = 1603300000;
     serialized_data.values.push(vv);
     serialized_data.lite_sig = price_response.get(0).unwrap().lite_evm_signature.clone().unwrap();
 
@@ -141,8 +141,8 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
 
     for (index, symbol) in price_data.symbols.into_iter().enumerate() {
         let symbol = symbol;
-        // let value = price_data.values.get(index).unwrap();
-        let value = 1603000000;
+        let value = price_data.values.get(index).unwrap();
+        // let value = 1603000000;
         let b32 = ethers::utils::format_bytes32_string(&*symbol).unwrap();
         let b32_hex = b32.encode_hex();
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
@@ -150,8 +150,8 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         data += value.encode_hex().strip_prefix("0x").unwrap();
 
 
-        // let timestamp = price_data.timestamp / 1000;
-        let timestamp = 1665487114642_u64 / 1000;
+        let timestamp = price_data.timestamp / 1000;
+        // let timestamp = 1665487114642_u64 / 1000;
         let timestamp_hex = timestamp.encode_hex();
         let timestamp_hex_stripped = timestamp_hex.strip_prefix("0x").unwrap();
 
