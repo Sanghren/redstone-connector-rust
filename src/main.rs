@@ -25,7 +25,7 @@ use crate::rest::ResponseApi;
 async fn main() -> Result<(), Box<dyn Error>> {
     setup_logger("redstone_connector_rust")?;
 
-    let anvil_instance = Anvil::at("/Users/sanghren/.foundry/bin/anvil").fork("http://10.8.0.1:9650/ext/bc/C/rpc").spawn();
+    let anvil_instance = Anvil::at("/home/tbrunain/.foundry/bin/anvil").fork("http://10.8.0.1:9650/ext/bc/C/rpc").spawn();
     let ws = Ws::connect(anvil_instance.ws_endpoint()).await?;
     let provider = Provider::new(ws);
 
@@ -43,7 +43,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // let compiled = Solc::default().compile_source("../contracts/example-avalanche-prod-flattened.sol").unwrap();
     // debug!("{:?}", compiled);
     let contract = compiled
-        .get("/Users/sanghren/Documents/PerSpace/Codespace/redstone-connector-rust/contracts/example-avalanche-prod-flattened.sol", "ExampleContractAvalancheProd")
+        .get("/home/tbrunain/Documents/PerSpace/Codespace/Wpolraky/redstone-connector-rust/contracts/example-avalanche-prod-flattened.sol", "ExampleContractAvalancheProd")
         .expect("could not find contract");
 
     // 2. instantiate our wallet
@@ -64,7 +64,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // 6. deploy it with the constructor arguments
     let contract = factory.deploy(())?.send().await?;
     debug!("Address {:?}", contract.address());
-    debug!("Method {:?}", contract);
+    // debug!("Method {:?}", contract);
 
     let instance = ExampleContractAvalancheProd::new(contract.address(), client.clone());
 
@@ -92,7 +92,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     serialized_data.timestamp = price_response.get(0).unwrap().timestamp.unwrap();
     serialized_data.symbols.push(price_response.get(0).unwrap().symbol.clone().unwrap());
-    let vv = (price_response.get(0).unwrap().value.unwrap() * 1000000.) as u64;
+    let vv = (price_response.get(0).unwrap().value.unwrap() * 100000000.) as u64;
     // let vv = 1603300000;
     serialized_data.values.push(vv);
     serialized_data.lite_sig = price_response.get(0).unwrap().lite_evm_signature.clone().unwrap();
@@ -112,8 +112,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Now we should be good to send the tx.
     let tx = TransactionRequest::new()
         .to(contract.address())
-        .data(Bytes::from(hex!("da93d0d14156415800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f8bd6c0000000000000000000000000000000000000000000000000000000006345510a0156009cdfb27d3270b0cb427398233f3a9621b55517c3cc0f71ab16b9e6e09fcc7f9ad594cb21f5a235c73e6e5ce8d13cbd8b957153d65187ffe919414d0486751b")))
-        // .data(Bytes::from(hex!("da93d0d141564158000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000063b2a06c000000000000000000000000000000000000000000000000000000006343ed3b01b5cd0cabe77e0690352a1049316d942813ae50f59d3e55f892773151494a8a4957fba2e5b28eb904567c20ec530f9dd6532bae9a66250e5417c9b74fbe2046091c")))
+        // .data(Bytes::from(hex!("da93d0d14156415800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f8bd6c0000000000000000000000000000000000000000000000000000000006345510a0156009cdfb27d3270b0cb427398233f3a9621b55517c3cc0f71ab16b9e6e09fcc7f9ad594cb21f5a235c73e6e5ce8d13cbd8b957153d65187ffe919414d0486751b")))
+        .data(Bytes::from_str(data.as_str()).unwrap())
         .chain_id(43114);
 
     debug!("Attempt tx {:?}", tx);
@@ -142,6 +142,7 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
     for (index, symbol) in price_data.symbols.into_iter().enumerate() {
         let symbol = symbol;
         let value = price_data.values.get(index).unwrap();
+        // let value = 1565078250;
         // let value = 1603000000;
         let b32 = ethers::utils::format_bytes32_string(&*symbol).unwrap();
         let b32_hex = b32.encode_hex();
@@ -150,7 +151,7 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         data += value.encode_hex().strip_prefix("0x").unwrap();
 
 
-        let timestamp = price_data.timestamp / 1000;
+        let timestamp = (price_data.timestamp as f64 / 1000.).ceil() as u64;
         // let timestamp = 1665487114642_u64 / 1000;
         let timestamp_hex = timestamp.encode_hex();
         let timestamp_hex_stripped = timestamp_hex.strip_prefix("0x").unwrap();
@@ -175,37 +176,9 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
     data
 }
 
-
-// ToDo Soooo we will append the data we generated (see below) to the "vanilla" tx.data
-//         4156415800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f8bd6c0000000000000000000000000000000000000000000000000000000006345510a0182d530263f8c2c6f8280187f98b74f3788f8dcc816972558cee07a3cad4926fb69da82d4c97092347ac1a4df6481b953c7b97f974fc79a38ad98b7742f3fddd71c
-// da93d0d141564158000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000063b2a06c000000000000000000000000000000000000000000000000000000006343ed3b01b5cd0cabe77e0690352a1049316d942813ae50f59d3e55f892773151494a8a4957fba2e5b28eb904567c20ec530f9dd6532bae9a66250e5417c9b74fbe2046091c
-// da93d0d14156415800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f8bd6c0000000000000000000000000000000000000000000000000000000006345510a018b6c20ee5dbe4c970cee4155a522511edc684e43b4ac835d48b883530a33f3bc2a6a1f95e4e24252ce36a2ba8dcba1e1db68d3c23ccb0cd7025e2da5be6129a31b
-//         4156415800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f8bd6c0000000000000000000000000000000000000000000000000000000006345510b01dc6f1c3318f59302089722e3f98d17b8ca43f4e56b345066dcf2915f0c2b6a8553dc8d86b6be7c1d378a4054a093d5b83fca13863c81987c83137b2448f203b11c
-// getLiteDataBytesString(priceData: SerializedPriceData): string {
-// // Calculating lite price data bytes array
-// let data = "";
-// for (let i = 0; i < priceData.symbols.length; i++) {
-// const symbol = priceData.symbols[i];
-// const value = priceData.values[i];
-// data += symbol.substr(2) + value.toString(16).padStart(64, "0");
-// }
-// data += Math.ceil(priceData.timestamp / 1000)
-// .toString(16)
-// .padStart(64, "0");
-//
-// return data;
-// }
-
-
 pub struct SerializedPriceData {
     symbols: Vec<String>,
     values: Vec<u64>,
     timestamp: u64,
     lite_sig: String,
 }
-
-// export interface SerializedPriceData {
-// symbols: string[];
-// values: any[];
-// timestamp: number;
-// }

@@ -1,0 +1,18 @@
+[package]
+name = "redstone_connector_rust"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ethers = { version = "0.17.0", features = ["abigen"]}
+ethers-contract = "0.17.0"
+ethers-solc = "0.17.0"
+ethers-providers = "0.17.0"
+
+log = "0.4.16"
+
+reqwest = "0.11.7"
+
+redstone_api = { version = "0.1.0", path = "../redstone_api"}
