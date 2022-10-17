@@ -1,13 +1,6 @@
 use ethers::abi::AbiEncode;
 use redstone_api::call;
 
-pub struct SerializedPriceData {
-    symbols: Vec<String>,
-    values: Vec<u64>,
-    timestamp: u64,
-    lite_sig: String,
-}
-
 //TODO Find good name
 /// Function that will add at the end of the data the redstone specific data that we will craft
 /// It returns the data it got as input + extra
@@ -79,19 +72,20 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
     data
 }
 
+pub struct SerializedPriceData {
+    symbols: Vec<String>,
+    values: Vec<u64>,
+    timestamp: u64,
+    lite_sig: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    // All it needs to do is ...
-    // get as the input the data of a tx we want to do
-    // list of assets for which we want a price
-    // call redstone api
-    // craft extra data
-    // returns it
-
-    #[test]
-    fn it_works() {
-        let result = add_redstone_data("".parse().unwrap(), Vec::new());
+    #[tokio::test]
+    async fn it_works() {
+        let result = add_redstone_data("".parse().unwrap(), Vec::new()).await;
+        assert_ne!(result, "");
     }
 }
