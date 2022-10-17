@@ -22,9 +22,7 @@ use reqwest::header::{CACHE_CONTROL, CONTENT_TYPE, PRAGMA, USER_AGENT};
 async fn main() -> Result<(), Box<dyn Error>> {
     setup_logger("redstone_connector_example")?;
 
-    let anvil_instance = Anvil::at(dotenv!("ANVIL_PATH"))
-        .fork(dotenv!("RPC_ENDPOINT"))
-        .spawn();
+    let anvil_instance = Anvil::at(dotenv!("ANVIL_PATH")).fork(dotenv!("RPC_ENDPOINT")).spawn();
     let ws = Ws::connect(anvil_instance.ws_endpoint()).await?;
     let provider = Provider::new(ws);
 
@@ -44,8 +42,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
     debug!("RUNTIME BYTECODE {:?}", _runtime_bytecode);
     // let compiled =
     let contract = compiled
-        .get(Path::new(&env!("CARGO_MANIFEST_DIR"))
-                 .join("contracts/example-avalanche-prod-flattened.sol").as_path().to_str().unwrap(), "ExampleContractAvalancheProd")
+        .get(
+            Path::new(&env!("CARGO_MANIFEST_DIR"))
+                .join("contracts/example-avalanche-prod-flattened.sol")
+                .as_path()
+                .to_str()
+                .unwrap(),
+            "ExampleContractAvalancheProd",
+        )
         .expect("could not find contract");
 
     // 2. instantiate our wallet
@@ -57,7 +61,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .interval(Duration::from_millis(10u64));
     debug!("D");
     // 4. instantiate the client with the wallet
-    let client = SignerMiddleware::new(provider, wallet.with_chain_id(u64::from_str(dotenv!("CHAIN_ID")).unwrap()));
+    let client = SignerMiddleware::new(
+        provider,
+        wallet.with_chain_id(u64::from_str(dotenv!("CHAIN_ID")).unwrap()),
+    );
     let client = Arc::new(client);
     debug!("E");
     // 5. create a factory which will be used to deploy instances of the contract
