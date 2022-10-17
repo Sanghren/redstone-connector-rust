@@ -1,13 +1,16 @@
+//! Will provide means to use Redstone in Rust
+//!
+//! Will provides functions to interact with Redstone's
+//! [`Redstone`]: https://redstone.finance/
+
 use ethers::abi::AbiEncode;
 use redstone_api::call;
 
-//TODO Find good name
 /// Function that will add at the end of the data the redstone specific data that we will craft
-/// It returns the data it got as input + extra
+/// It returns the data it got as input + extra, where extra is generated following redstone logic
 pub async fn add_redstone_data(data: String, assets: Vec<String>) -> String {
-    // It needs to call a redstone endpoint with appropriate request param
     let res = call("https://api.redstone.finance/prices?symbol=AVAX&provider=redstone-avalanche-prod-1&limit=1".parse().unwrap(), Vec::new()).await;
-    // Deserialize the response
+
     let mut serialized_data = SerializedPriceData {
         symbols: vec![],
         values: vec![],
@@ -15,13 +18,12 @@ pub async fn add_redstone_data(data: String, assets: Vec<String>) -> String {
         lite_sig: String::new(),
     };
 
+    // ToDo It must work for an array with more than 1 asset
     serialized_data.timestamp = res.get(0).unwrap().timestamp.unwrap();
     serialized_data.symbols.push(res.get(0).unwrap().symbol.clone().unwrap());
-    let vv = (res.get(0).unwrap().value.unwrap() * 100000000.) as u64;
-    // let vv = 1603300000;
-    serialized_data.values.push(vv);
+    let value = (res.get(0).unwrap().value.unwrap() * 100000000.) as u64;
+    serialized_data.values.push(value);
     serialized_data.lite_sig = res.get(0).unwrap().lite_evm_signature.clone().unwrap();
-    // call get_lite_data_bytes_string
     let data_to_append = get_lite_data_bytes_string(serialized_data);
 
     // append the result of the above line to input data

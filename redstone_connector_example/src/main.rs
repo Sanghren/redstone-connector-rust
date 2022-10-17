@@ -1,6 +1,8 @@
 mod log;
 mod rest;
-
+use dotenv::dotenv;
+#[macro_use]
+extern crate dotenv_codegen;
 use crate::{abi::Abi, log::setup_logger};
 use ::log::{debug, error, trace};
 use ethers::{abi::AbiEncode, prelude::*, utils::Anvil};
@@ -20,8 +22,8 @@ use reqwest::header::{CACHE_CONTROL, CONTENT_TYPE, PRAGMA, USER_AGENT};
 async fn main() -> Result<(), Box<dyn Error>> {
     setup_logger("redstone_connector_example")?;
 
-    let anvil_instance = Anvil::at("/home/tbrunain/.foundry/bin/anvil")
-        .fork("http://10.8.0.1:9650/ext/bc/C/rpc")
+    let anvil_instance = Anvil::at(dotenv!("ANVIL_PATH"))
+        .fork(dotenv!("RPC_ENDPOINT"))
         .spawn();
     let ws = Ws::connect(anvil_instance.ws_endpoint()).await?;
     let provider = Provider::new(ws);
@@ -41,10 +43,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     debug!("BYTECODE {:?}", bytecode);
     debug!("RUNTIME BYTECODE {:?}", _runtime_bytecode);
     // let compiled =
-    // Solc::default().compile_source("../contracts/example-avalanche-prod-flattened.sol").unwrap();
-    // debug!("{:?}", compiled);
     let contract = compiled
-        .get("/home/tbrunain/Documents/PerSpace/Codespace/Wpolraky/redstone-connector-rust/redstone_connector_example/contracts/example-avalanche-prod-flattened.sol", "ExampleContractAvalancheProd")
+        .get(Path::new(&env!("CARGO_MANIFEST_DIR"))
+                 .join("contracts/example-avalanche-prod-flattened.sol").as_path().to_str().unwrap(), "ExampleContractAvalancheProd")
         .expect("could not find contract");
 
     // 2. instantiate our wallet
@@ -56,7 +57,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .interval(Duration::from_millis(10u64));
     debug!("D");
     // 4. instantiate the client with the wallet
-    let client = SignerMiddleware::new(provider, wallet.with_chain_id(43114 as u64));
+    let client = SignerMiddleware::new(provider, wallet.with_chain_id(u64::from_str(dotenv!("CHAIN_ID")).unwrap()));
     let client = Arc::new(client);
     debug!("E");
     // 5. create a factory which will be used to deploy instances of the contract
@@ -74,42 +75,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut data = String::from("da93d0d1");
     data = add_redstone_data(data, Vec::new()).await;
 
-    // let req_client = reqwest::Client::new();
-    // let response = req_client.get("https://api.redstone.finance/prices?symbol=AVAX&provider=redstone-avalanche-prod-1&limit=1")
-    //     .header(USER_AGENT, "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_1) AppleWebKit/537.36
-    // (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36")     .header(CONTENT_TYPE,
-    // "application/json")     .header(CACHE_CONTROL, "no-store")
-    //     .header(PRAGMA, "no-cache")
-    //     .send().await?;
-    //
-    // let price_response: Vec<ResponseApi> = response.json().await?;
-    // trace!("Raw JSON response for ResponseApi<TeamResult>: {:?}", price_response);
-    //
-    // // Prepare the SerializedData
-    // let mut serialized_data = SerializedPriceData {
-    //     symbols: vec![],
-    //     values: vec![],
-    //     timestamp: 0,
-    //     lite_sig: String::new(),
-    // };
-    //
-    // serialized_data.timestamp = price_response.get(0).unwrap().timestamp.unwrap();
-    // serialized_data.symbols.push(price_response.get(0).unwrap().symbol.clone().unwrap());
-    // let vv = (price_response.get(0).unwrap().value.unwrap() * 100000000.) as u64;
-    // // let vv = 1603300000;
-    // serialized_data.values.push(vv);
-    // serialized_data.lite_sig =
-    // price_response.get(0).unwrap().lite_evm_signature.clone().unwrap();
-    //
-    // let data_to_append = get_lite_data_bytes_string(serialized_data);
-    //
-    // // ToDo Check this selector , should be dynamic of course but here want to test the setprice
-    // one
-    //
-    // data += &*data_to_append;
-
     println!("After appending vanilla and generated data -- {:?}", data);
-    // println!("After appending vanilla and generated dataWW -- {:?}", hex::decode(data).unwrap());
 
     let res = instance.get_last_price().call().await?;
     debug!("GET LAST PRICE BEOFRE SETTING IT {:?}", res);
@@ -117,7 +83,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Now we should be good to send the tx.
     let tx = TransactionRequest::new()
         .to(contract.address())
-        // .data(Bytes::from(hex!("da93d0d14156415800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005f8bd6c0000000000000000000000000000000000000000000000000000000006345510a0156009cdfb27d3270b0cb427398233f3a9621b55517c3cc0f71ab16b9e6e09fcc7f9ad594cb21f5a235c73e6e5ce8d13cbd8b957153d65187ffe919414d0486751b")))
         .data(Bytes::from_str(data.as_str()).unwrap())
         .chain_id(43114);
 
@@ -129,62 +94,4 @@ async fn main() -> Result<(), Box<dyn Error>> {
     debug!("GET LAST PRICE AFTER SETTING IT {:?}", res);
 
     Ok(())
-}
-
-pub fn compile_contract(name: &str, filename: &str) -> (Abi, Bytes) {
-    let path = format!("./tests/solidity-contracts/{}", filename);
-    let compiled = Solc::default().compile_source(&path).unwrap();
-    let contract = compiled.get(&path, name).expect("could not find contract");
-    let (abi, bin, _) = contract.into_parts_or_default();
-    (abi, bin)
-}
-// 4156415800000000000000000000000000000000000000000000000000000000
-
-pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
-    let mut data = String::new();
-
-    for (index, symbol) in price_data.symbols.into_iter().enumerate() {
-        let symbol = symbol;
-        let value = price_data.values.get(index).unwrap();
-        // let value = 1565078250;
-        // let value = 1603000000;
-        let b32 = ethers::utils::format_bytes32_string(&*symbol).unwrap();
-        let b32_hex = b32.encode_hex();
-        let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
-        data += b32_hex_stripped;
-        data += value.encode_hex().strip_prefix("0x").unwrap();
-
-        let timestamp = (price_data.timestamp as f64 / 1000.).ceil() as u64;
-        // let timestamp = 1665487114642_u64 / 1000;
-        let timestamp_hex = timestamp.encode_hex();
-        let timestamp_hex_stripped = timestamp_hex.strip_prefix("0x").unwrap();
-
-        data += timestamp_hex_stripped;
-
-        let len_hex = format!("{:#04x}", price_data.values.len());
-        let len_hex = len_hex.strip_prefix("0x").unwrap();
-
-        data += len_hex;
-
-        let lite_sig = price_data.lite_sig.clone();
-        let lite_sig = lite_sig.strip_prefix("0x").unwrap();
-
-        data += lite_sig;
-
-        println!(
-            "OYYYYYYH {:02X?}",
-            ethers::utils::format_bytes32_string(&*symbol).unwrap().encode_hex().strip_prefix("0x")
-        );
-        println!("OYYYYYYH - 2 {:?}", value.encode_hex().strip_prefix("0x"));
-        println!("OYYYYYYH - 2 {:?}", data);
-    }
-
-    data
-}
-
-pub struct SerializedPriceData {
-    symbols: Vec<String>,
-    values: Vec<u64>,
-    timestamp: u64,
-    lite_sig: String,
 }
