@@ -1,12 +1,17 @@
+use ethers::abi::AbiEncode;
 use redstone_api::call;
+
+pub struct SerializedPriceData {
+    symbols: Vec<String>,
+    values: Vec<u64>,
+    timestamp: u64,
+    lite_sig: String,
+}
 
 //TODO Find good name
 /// Function that will add at the end of the data the redstone specific data that we will craft
 /// It returns the data it got as input + extra
-pub async fn append_redstone_data(
-    data: String,
-    assets: Vec<String>) -> String{
-
+pub async fn add_redstone_data(data: String, assets: Vec<String>) -> String {
     // It needs to call a redstone endpoint with appropriate request param
     let res = call("https://api.redstone.finance/prices?symbol=AVAX&provider=redstone-avalanche-prod-1&limit=1".parse().unwrap(), Vec::new()).await;
     // Deserialize the response
@@ -46,7 +51,6 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         data += b32_hex_stripped;
         data += value.encode_hex().strip_prefix("0x").unwrap();
 
-
         let timestamp = (price_data.timestamp as f64 / 1000.).ceil() as u64;
         // let timestamp = 1665487114642_u64 / 1000;
         let timestamp_hex = timestamp.encode_hex();
@@ -64,7 +68,10 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
 
         data += lite_sig;
 
-        println!("OYYYYYYH {:02X?}", ethers::utils::format_bytes32_string(&*symbol).unwrap().encode_hex().strip_prefix("0x"));
+        println!(
+            "OYYYYYYH {:02X?}",
+            ethers::utils::format_bytes32_string(&*symbol).unwrap().encode_hex().strip_prefix("0x")
+        );
         println!("OYYYYYYH - 2 {:?}", value.encode_hex().strip_prefix("0x"));
         println!("OYYYYYYH - 2 {:?}", data);
     }
@@ -85,6 +92,6 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let result = append_redstone_data("".parse().unwrap(), Vec::new());
+        let result = add_redstone_data("".parse().unwrap(), Vec::new());
     }
 }

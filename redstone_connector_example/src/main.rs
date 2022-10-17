@@ -1,49 +1,50 @@
 mod log;
 mod rest;
 
-use std::error::Error;
-use std::path::Path;
-use std::str::FromStr;
+use crate::{abi::Abi, log::setup_logger};
 use ::log::{debug, error, trace};
-use ethers::prelude::*;
-use ethers::utils::Anvil;
-use ethers_providers::{Provider, Ws};
-use crate::log::setup_logger;
+use ethers::{abi::AbiEncode, prelude::*, utils::Anvil};
 use ethers_contract::{abigen, ContractFactory, EthAbiType};
-use crate::abi::Abi;
+use ethers_providers::{Provider, Ws};
 use ethers_solc::Solc;
-use tokio::time::{sleep, Duration};
-use std::sync::Arc;
-use ethers::abi::AbiEncode;
 use hex::ToHex;
+use std::{error::Error, path::Path, str::FromStr, sync::Arc};
+use tokio::time::{sleep, Duration};
 abigen!(ExampleContractAvalancheProd, "./abi/example_contract_avalanche_prod.abi");
-use hex_literal::hex;
-use reqwest::header::{CACHE_CONTROL, CONTENT_TYPE, PRAGMA, USER_AGENT};
 use crate::rest::ResponseApi;
+use hex_literal::hex;
+use redstone_connector_rust::add_redstone_data;
+use reqwest::header::{CACHE_CONTROL, CONTENT_TYPE, PRAGMA, USER_AGENT};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    setup_logger("redstone_connector_rust")?;
+    setup_logger("redstone_connector_example")?;
 
-    let anvil_instance = Anvil::at("/home/tbrunain/.foundry/bin/anvil").fork("http://10.8.0.1:9650/ext/bc/C/rpc").spawn();
+    let anvil_instance = Anvil::at("/home/tbrunain/.foundry/bin/anvil")
+        .fork("http://10.8.0.1:9650/ext/bc/C/rpc")
+        .spawn();
     let ws = Ws::connect(anvil_instance.ws_endpoint()).await?;
     let provider = Provider::new(ws);
 
-    let source = Path::new(&env!("CARGO_MANIFEST_DIR")).join("contracts/example-avalanche-prod-flattened.sol");
+    let source = Path::new(&env!("CARGO_MANIFEST_DIR"))
+        .join("contracts/example-avalanche-prod-flattened.sol");
     debug!("PATH {:?}", source.as_path());
     let compiled = Solc::default().compile_source(source).expect("Could not compile contracts");
     debug!("COMPILKED {:?}", compiled);
     debug!("A");
-    let (abi, bytecode, _runtime_bytecode) =
-        compiled.find("ExampleContractAvalancheProd").expect("could not find contract").into_parts_or_default();
+    let (abi, bytecode, _runtime_bytecode) = compiled
+        .find("ExampleContractAvalancheProd")
+        .expect("could not find contract")
+        .into_parts_or_default();
     debug!("B");
     debug!("ABI {:?}", abi);
     debug!("BYTECODE {:?}", bytecode);
     debug!("RUNTIME BYTECODE {:?}", _runtime_bytecode);
-    // let compiled = Solc::default().compile_source("../contracts/example-avalanche-prod-flattened.sol").unwrap();
+    // let compiled =
+    // Solc::default().compile_source("../contracts/example-avalanche-prod-flattened.sol").unwrap();
     // debug!("{:?}", compiled);
     let contract = compiled
-        .get("/home/tbrunain/Documents/PerSpace/Codespace/Wpolraky/redstone-connector-rust/contracts/example-avalanche-prod-flattened.sol", "ExampleContractAvalancheProd")
+        .get("/home/tbrunain/Documents/PerSpace/Codespace/Wpolraky/redstone-connector-rust/redstone_connector_example/contracts/example-avalanche-prod-flattened.sol", "ExampleContractAvalancheProd")
         .expect("could not find contract");
 
     // 2. instantiate our wallet
@@ -51,8 +52,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     debug!("C");
     debug!("Wallet address {:?}", wallet);
     // 3. connect to the network
-    let provider =
-        Provider::<Http>::try_from(anvil_instance.endpoint())?.interval(Duration::from_millis(10u64));
+    let provider = Provider::<Http>::try_from(anvil_instance.endpoint())?
+        .interval(Duration::from_millis(10u64));
     debug!("D");
     // 4. instantiate the client with the wallet
     let client = SignerMiddleware::new(provider, wallet.with_chain_id(43114 as u64));
@@ -68,40 +69,44 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let instance = ExampleContractAvalancheProd::new(contract.address(), client.clone());
 
-    // Data here is crafted from redstone connector . I just copy pasted the data generate by the ts lib.
-    // It is timestamped
-
-    let req_client = reqwest::Client::new();
-    let response = req_client.get("https://api.redstone.finance/prices?symbol=AVAX&provider=redstone-avalanche-prod-1&limit=1")
-        .header(USER_AGENT, "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36")
-        .header(CONTENT_TYPE, "application/json")
-        .header(CACHE_CONTROL, "no-store")
-        .header(PRAGMA, "no-cache")
-        .send().await?;
-
-    let price_response: Vec<ResponseApi> = response.json().await?;
-    trace!("Raw JSON response for ResponseApi<TeamResult>: {:?}", price_response);
-
-    // Prepare the SerializedData
-    let mut serialized_data = SerializedPriceData {
-        symbols: vec![],
-        values: vec![],
-        timestamp: 0,
-        lite_sig: String::new(),
-    };
-
-    serialized_data.timestamp = price_response.get(0).unwrap().timestamp.unwrap();
-    serialized_data.symbols.push(price_response.get(0).unwrap().symbol.clone().unwrap());
-    let vv = (price_response.get(0).unwrap().value.unwrap() * 100000000.) as u64;
-    // let vv = 1603300000;
-    serialized_data.values.push(vv);
-    serialized_data.lite_sig = price_response.get(0).unwrap().lite_evm_signature.clone().unwrap();
-
-    let data_to_append = get_lite_data_bytes_string(serialized_data);
-
-    // ToDo Check this selector , should be dynamic of course but here want to test the setprice one
+    // Data here is crafted from redstone connector . I just copy pasted the data generate by the ts
+    // lib. It is timestamped
     let mut data = String::from("da93d0d1");
-    data += &*data_to_append;
+    data = add_redstone_data(data, Vec::new()).await;
+
+    // let req_client = reqwest::Client::new();
+    // let response = req_client.get("https://api.redstone.finance/prices?symbol=AVAX&provider=redstone-avalanche-prod-1&limit=1")
+    //     .header(USER_AGENT, "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_1) AppleWebKit/537.36
+    // (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36")     .header(CONTENT_TYPE,
+    // "application/json")     .header(CACHE_CONTROL, "no-store")
+    //     .header(PRAGMA, "no-cache")
+    //     .send().await?;
+    //
+    // let price_response: Vec<ResponseApi> = response.json().await?;
+    // trace!("Raw JSON response for ResponseApi<TeamResult>: {:?}", price_response);
+    //
+    // // Prepare the SerializedData
+    // let mut serialized_data = SerializedPriceData {
+    //     symbols: vec![],
+    //     values: vec![],
+    //     timestamp: 0,
+    //     lite_sig: String::new(),
+    // };
+    //
+    // serialized_data.timestamp = price_response.get(0).unwrap().timestamp.unwrap();
+    // serialized_data.symbols.push(price_response.get(0).unwrap().symbol.clone().unwrap());
+    // let vv = (price_response.get(0).unwrap().value.unwrap() * 100000000.) as u64;
+    // // let vv = 1603300000;
+    // serialized_data.values.push(vv);
+    // serialized_data.lite_sig =
+    // price_response.get(0).unwrap().lite_evm_signature.clone().unwrap();
+    //
+    // let data_to_append = get_lite_data_bytes_string(serialized_data);
+    //
+    // // ToDo Check this selector , should be dynamic of course but here want to test the setprice
+    // one
+    //
+    // data += &*data_to_append;
 
     println!("After appending vanilla and generated data -- {:?}", data);
     // println!("After appending vanilla and generated dataWW -- {:?}", hex::decode(data).unwrap());
@@ -117,8 +122,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .chain_id(43114);
 
     debug!("Attempt tx {:?}", tx);
-    let receipt =
-        client.clone().send_transaction(tx, None).await.unwrap().await.unwrap().unwrap();
+    let receipt = client.clone().send_transaction(tx, None).await.unwrap().await.unwrap().unwrap();
     debug!("ATCHOUM - {:?}", receipt);
 
     let res = instance.get_last_price().call().await?;
@@ -150,7 +154,6 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         data += b32_hex_stripped;
         data += value.encode_hex().strip_prefix("0x").unwrap();
 
-
         let timestamp = (price_data.timestamp as f64 / 1000.).ceil() as u64;
         // let timestamp = 1665487114642_u64 / 1000;
         let timestamp_hex = timestamp.encode_hex();
@@ -168,7 +171,10 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
 
         data += lite_sig;
 
-        println!("OYYYYYYH {:02X?}", ethers::utils::format_bytes32_string(&*symbol).unwrap().encode_hex().strip_prefix("0x"));
+        println!(
+            "OYYYYYYH {:02X?}",
+            ethers::utils::format_bytes32_string(&*symbol).unwrap().encode_hex().strip_prefix("0x")
+        );
         println!("OYYYYYYH - 2 {:?}", value.encode_hex().strip_prefix("0x"));
         println!("OYYYYYYH - 2 {:?}", data);
     }

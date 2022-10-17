@@ -1,18 +1,15 @@
 use log::{debug, trace};
 use reqwest::Client;
-use serde::Deserialize;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-pub async fn call(url: String, assets: Vec<String>) ->  Vec<ResponseApi>{
+pub async fn call(url: String, assets: Vec<String>) -> Vec<ResponseApi> {
     let req_client = Client::new();
-    let response = req_client.get(url)
-        .send().await.unwrap();
+    let response = req_client.get(url).send().await.unwrap();
 
     let price_response: Vec<ResponseApi> = response.json().await.unwrap();
 
     price_response
 }
-
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct ResponseApi {
@@ -56,7 +53,6 @@ pub struct Source {
     #[serde(rename(deserialize = "binanceusdm"))]
     pub binance_usdm: Option<f64>,
 }
-
 
 #[cfg(test)]
 mod tests {
