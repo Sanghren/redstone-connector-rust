@@ -4,12 +4,20 @@
 //! [`Redstone`]: https://redstone.finance/
 
 use ethers::abi::AbiEncode;
-use redstone_api::call;
+use redstone_api::{get_price};
 
 /// Function that will add at the end of the data the redstone specific data that we will craft
 /// It returns the data it got as input + extra, where extra is generated following redstone logic
-pub async fn add_redstone_data(data: String, assets: Vec<String>) -> String {
-    let res = call("https://api.redstone.finance/prices?symbol=AVAX&provider=redstone-avalanche-prod-1&limit=1".parse().unwrap(), Vec::new()).await;
+pub async fn add_redstone_data(data: String, vec_assets: Vec<String>) -> String {
+    let mut assets = String::new();
+    let vec_len = vec_assets.len();
+    for asset in vec_assets {
+        assets += asset.as_str();
+        if vec_len > 1 {
+            assets += ",";
+        }
+    }
+    let res = get_price("https://api.redstone.finance/prices?{symbol}={assets}&provider=redstone-avalanche-prod-1&limit=1".parse().unwrap(), assets).await;
 
     let mut serialized_data = SerializedPriceData {
         symbols: vec![],
@@ -38,8 +46,6 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
     for (index, symbol) in price_data.symbols.into_iter().enumerate() {
         let symbol = symbol;
         let value = price_data.values.get(index).unwrap();
-        // let value = 1565078250;
-        // let value = 1603000000;
         let b32 = ethers::utils::format_bytes32_string(&*symbol).unwrap();
         let b32_hex = b32.encode_hex();
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
@@ -47,7 +53,6 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         data += value.encode_hex().strip_prefix("0x").unwrap();
 
         let timestamp = (price_data.timestamp as f64 / 1000.).ceil() as u64;
-        // let timestamp = 1665487114642_u64 / 1000;
         let timestamp_hex = timestamp.encode_hex();
         let timestamp_hex_stripped = timestamp_hex.strip_prefix("0x").unwrap();
 
@@ -62,13 +67,6 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let lite_sig = lite_sig.strip_prefix("0x").unwrap();
 
         data += lite_sig;
-
-        println!(
-            "OYYYYYYH {:02X?}",
-            ethers::utils::format_bytes32_string(&*symbol).unwrap().encode_hex().strip_prefix("0x")
-        );
-        println!("OYYYYYYH - 2 {:?}", value.encode_hex().strip_prefix("0x"));
-        println!("OYYYYYYH - 2 {:?}", data);
     }
 
     data
@@ -86,8 +84,13 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn it_works() {
-        let result = add_redstone_data("".parse().unwrap(), Vec::new()).await;
+    async fn it_works_for_one_asset() {
+        let result = add_redstone_data("".parse().unwrap(), ["AVAX".to_string()].to_vec()).await;
+        assert_ne!(result, "");
+    }
+    #[tokio::test]
+    async fn it_works_for_two_assets() {
+        let result = add_redstone_data("".parse().unwrap(), ["AVAX".to_string(),"ETH".to_string()].to_vec()).await;
         assert_ne!(result, "");
     }
 }

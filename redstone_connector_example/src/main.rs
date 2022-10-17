@@ -37,9 +37,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .expect("could not find contract")
         .into_parts_or_default();
     debug!("B");
-    debug!("ABI {:?}", abi);
-    debug!("BYTECODE {:?}", bytecode);
-    debug!("RUNTIME BYTECODE {:?}", _runtime_bytecode);
     // let compiled =
     let contract = compiled
         .get(
@@ -80,7 +77,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Data here is crafted from redstone connector . I just copy pasted the data generate by the ts
     // lib. It is timestamped
     let mut data = String::from("da93d0d1");
-    data = add_redstone_data(data, Vec::new()).await;
+    data = add_redstone_data(data, ["AVAX".to_string()].to_vec()).await;
 
     println!("After appending vanilla and generated data -- {:?}", data);
 
