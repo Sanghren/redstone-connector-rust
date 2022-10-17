@@ -17,7 +17,9 @@ pub async fn add_redstone_data(data: String, vec_assets: Vec<String>) -> String 
             assets += ",";
         }
     }
-    let res = get_price("https://api.redstone.finance/prices?{symbol}={assets}&provider=redstone-avalanche-prod-1&limit=1".parse().unwrap(), assets).await;
+
+    //ToDo Rename this
+    let vec_response_api = get_price("https://api.redstone.finance/prices?{symbol}={assets}&provider=redstone-avalanche-prod-1&limit=1".parse().unwrap(), assets).await;
 
     let mut serialized_data = SerializedPriceData {
         symbols: vec![],
@@ -26,12 +28,17 @@ pub async fn add_redstone_data(data: String, vec_assets: Vec<String>) -> String 
         lite_sig: String::new(),
     };
 
+    serialized_data.timestamp = vec_response_api.get(0).unwrap().timestamp.unwrap();
+    serialized_data.lite_sig = vec_response_api.get(0).unwrap().lite_evm_signature.clone().unwrap();
+    for r in vec_response_api {
+        serialized_data.symbols.push(r.symbol.unwrap());
+        serialized_data.values.push((r.value.unwrap() * 100000000.) as u64);
+    }
+
     // ToDo It must work for an array with more than 1 asset
-    serialized_data.timestamp = res.get(0).unwrap().timestamp.unwrap();
-    serialized_data.symbols.push(res.get(0).unwrap().symbol.clone().unwrap());
-    let value = (res.get(0).unwrap().value.unwrap() * 100000000.) as u64;
-    serialized_data.values.push(value);
-    serialized_data.lite_sig = res.get(0).unwrap().lite_evm_signature.clone().unwrap();
+    // serialized_data.symbols.push(vec_response_api.get(0).unwrap().symbol.clone().unwrap());
+    // let value = (vec_response_api.get(0).unwrap().value.unwrap() * 100000000.) as u64;
+    // serialized_data.values.push(value);
     let data_to_append = get_lite_data_bytes_string(serialized_data);
 
     // append the result of the above line to input data
@@ -51,23 +58,23 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
         data += b32_hex_stripped;
         data += value.encode_hex().strip_prefix("0x").unwrap();
-
-        let timestamp = (price_data.timestamp as f64 / 1000.).ceil() as u64;
-        let timestamp_hex = timestamp.encode_hex();
-        let timestamp_hex_stripped = timestamp_hex.strip_prefix("0x").unwrap();
-
-        data += timestamp_hex_stripped;
-
-        let len_hex = format!("{:#04x}", price_data.values.len());
-        let len_hex = len_hex.strip_prefix("0x").unwrap();
-
-        data += len_hex;
-
-        let lite_sig = price_data.lite_sig.clone();
-        let lite_sig = lite_sig.strip_prefix("0x").unwrap();
-
-        data += lite_sig;
     }
+    let timestamp = (price_data.timestamp as f64 / 1000.).ceil() as u64;
+    let timestamp_hex = timestamp.encode_hex();
+    let timestamp_hex_stripped = timestamp_hex.strip_prefix("0x").unwrap();
+
+    data += timestamp_hex_stripped;
+
+    let len_hex = format!("{:#04x}", price_data.values.len());
+    let len_hex = len_hex.strip_prefix("0x").unwrap();
+
+    data += len_hex;
+
+    let lite_sig = price_data.lite_sig.clone();
+    let lite_sig = lite_sig.strip_prefix("0x").unwrap();
+
+    data += lite_sig;
+
 
     data
 }
@@ -88,9 +95,11 @@ mod tests {
         let result = add_redstone_data("".parse().unwrap(), ["AVAX".to_string()].to_vec()).await;
         assert_ne!(result, "");
     }
+
     #[tokio::test]
     async fn it_works_for_two_assets() {
-        let result = add_redstone_data("".parse().unwrap(), ["AVAX".to_string(),"ETH".to_string()].to_vec()).await;
+        let result = add_redstone_data("".parse().unwrap(), ["AVAX".to_string(), "ETH".to_string()].to_vec()).await;
+        println!("{:?}", result);
         assert_ne!(result, "");
     }
 }
