@@ -102,4 +102,22 @@ mod tests {
         println!("{:?}", result);
         assert_ne!(result, "");
     }
+
+    #[tokio::test]
+    async fn it_works_for_ten_assets() {
+        let result = add_redstone_data("".parse().unwrap(), [
+            "AVAX".to_string(),
+            "ETH".to_string(),
+            "BTC".to_string(),
+            "USDT".to_string(),
+            "PNG".to_string(),
+            "XAVA".to_string(),
+            "LINK".to_string(),
+            "YAK".to_string(),
+            "QI".to_string(),
+            "USDC".to_string(),
+        ].to_vec()).await;
+        println!("{:?}", result);
+        assert_ne!(result, "");
+    }
 }
