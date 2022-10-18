@@ -9,13 +9,19 @@ use redstone_api::{get_price};
 /// Function that will add at the end of the data the redstone specific data that we will craft
 /// It returns the data it got as input + extra, where extra is generated following redstone logic
 pub async fn add_redstone_data(data: String, vec_assets: Vec<String>) -> String {
-    let mut assets = String::new();
+    let mut assets: Option<String> = Some(String::new());
+    if vec_assets.is_empty() {
+        assets = None;
+    }
     let vec_len = vec_assets.len();
     for asset in vec_assets {
-        assets += asset.as_str();
+        let mut assetss = assets.unwrap();
+        assetss += asset.as_str();
         if vec_len > 1 {
-            assets += ",";
+            assetss += ",";
         }
+
+        assets = Some(assetss);
     }
 
     //ToDo Rename this
