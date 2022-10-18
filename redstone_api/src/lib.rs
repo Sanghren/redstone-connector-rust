@@ -4,6 +4,7 @@
 //! [`Redstone`]: https://redstone.finance/
 //!
 extern crate strfmt;
+
 use strfmt::strfmt;
 use std::collections::HashMap;
 use log::{debug, trace};
@@ -12,23 +13,33 @@ use serde::{Deserialize, Serialize};
 
 /// Will perform a call to a specified URL and returns a vector of [ResponseApi]
 /// ToDo Make it more configurable (query filter and al')
-pub async fn get_price(url: String, asset: String) -> Vec<ResponseApi> {
+pub async fn get_price(url: String, asset: Option<String>) -> Vec<ResponseApi> {
     let mut vars = HashMap::new();
-    let multi_asset = asset.contains(",");
     let fmt = url;
-    if multi_asset {
-        vars.insert("symbol".to_string(), "symbols");
+    let mut multi_asset = true;
+    let is_some = asset.is_some();
+    let asset = asset.unwrap_or("".to_string());
+    if  is_some {
+
+        multi_asset = asset.contains(",");
+
+        if multi_asset {
+            vars.insert("symbol".to_string(), "symbols");
+        } else {
+            vars.insert("symbol".to_string(), "symbol");
+        }
+        vars.insert("assets".to_string(), asset.as_str());
     } else {
-        vars.insert("symbol".to_string(), "symbol");
+        vars.insert("symbol".to_string(), "");
+        vars.insert("assets".to_string(), "");
     }
-    vars.insert("assets".to_string(), asset.as_str());
 
     let formatted_call = strfmt(&fmt, &vars).unwrap();
     let req_client = Client::new();
     let response = req_client.get(formatted_call).send().await.unwrap();
     let mut price_response = Vec::new();
     if multi_asset {
-        let map_price_response: HashMap<String,ResponseApi> = response.json().await.unwrap();
+        let map_price_response: HashMap<String, ResponseApi> = response.json().await.unwrap();
         price_response = Vec::from_iter(map_price_response.values().cloned());
     } else {
         let vec_price_response: Vec<ResponseApi> = response.json().await.unwrap();
@@ -90,14 +101,21 @@ mod tests {
 
     #[tokio::test]
     async fn it_should_get_a_result_for_one_asset() {
-        let result = get_price("https://api.redstone.finance/prices?{symbol}={assets}&provider=redstone-avalanche-prod-1&limit=1".parse().unwrap(), "AVAX".to_string()).await;
+        let result = get_price("https://api.redstone.finance/prices?{symbol}={assets}&provider=redstone-avalanche-prod-1&limit=1".parse().unwrap(), Some("AVAX".to_string())).await;
         assert_eq!(result.len(), 1)
     }
 
     #[tokio::test]
     async fn it_should_get_a_result_for_two_assets() {
-        let result = get_price("https://api.redstone.finance/prices?{symbol}={assets}&provider=redstone-avalanche-prod-1&limit=1".parse().unwrap(), "AVAX,ETH".to_string()).await;
+        let result = get_price("https://api.redstone.finance/prices?{symbol}={assets}&provider=redstone-avalanche-prod-1&limit=1".parse().unwrap(), Some("AVAX,ETH".to_string())).await;
         println!("{:?}", result);
         assert_eq!(result.len(), 2)
+    }
+
+    #[tokio::test]
+    async fn it_should_get_a_result_for_all_assets() {
+        let result = get_price("https://api.redstone.finance/prices?{symbol}={assets}&provider=redstone-avalanche-prod-1&limit=1".parse().unwrap(), None).await;
+        println!("{:?}", result);
+        assert_eq!(result.len(), 17)
     }
 }
