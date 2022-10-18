@@ -25,7 +25,7 @@ pub async fn add_redstone_data(data: String, vec_assets: Vec<String>) -> String 
     }
 
     //ToDo Rename this
-    let vec_response_api = get_price("https://api.redstone.finance/prices?{symbol}={assets}&provider=redstone-avalanche-prod-1&limit=1".parse().unwrap(), assets).await;
+    let vec_response_api = get_price("https://api.redstone.finance/prices?{symbol}={assets}&provider=TEHhCDWy-vGmPSZsYJyM0aP_MM4xESgyIZdf5mVODzg".parse().unwrap(), assets).await;
 
     let mut serialized_data = SerializedPriceData {
         symbols: vec![],
