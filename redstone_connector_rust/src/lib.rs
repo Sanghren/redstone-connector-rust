@@ -72,7 +72,7 @@ pub async fn get_packages(data: String, provider: String) -> String {
     serialized_data.lite_sig = vec_response_api.lite_signature.clone().unwrap();
     for r in vec_response_api.prices {
         serialized_data.symbols.push(r.symbol.unwrap());
-        serialized_data.values.push((r.value.unwrap() * 100000000.).ceil() as u64);
+        serialized_data.values.push((r.value.unwrap() * 100000000.).floor() as u64);
     }
     println!("OYHHH -- {:?}", serialized_data);
     // ToDo It must work for an array with more than 1 asset
