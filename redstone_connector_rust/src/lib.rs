@@ -4,11 +4,11 @@
 //! [`Redstone`]: https://redstone.finance/
 
 use ethers::abi::AbiEncode;
-use redstone_api::{get_price};
+use redstone_api::{get_package, get_price};
 
 /// Function that will add at the end of the data the redstone specific data that we will craft
 /// It returns the data it got as input + extra, where extra is generated following redstone logic
-pub async fn add_redstone_data(data: String, vec_assets: Vec<String>, provider: String) -> String {
+pub async fn get_prices(data: String, vec_assets: Vec<String>, provider: String) -> String {
     let mut assets: Option<String> = Some(String::new());
     if vec_assets.is_empty() {
         assets = None;
@@ -37,6 +37,38 @@ pub async fn add_redstone_data(data: String, vec_assets: Vec<String>, provider: 
     serialized_data.timestamp = vec_response_api.get(0).unwrap().timestamp.unwrap();
     serialized_data.lite_sig = vec_response_api.get(0).unwrap().lite_evm_signature.clone().unwrap();
     for r in vec_response_api {
+        serialized_data.symbols.push(r.symbol.unwrap());
+        serialized_data.values.push((r.value.unwrap() * 100000000.) as u64);
+    }
+
+    // ToDo It must work for an array with more than 1 asset
+    // serialized_data.symbols.push(vec_response_api.get(0).unwrap().symbol.clone().unwrap());
+    // let value = (vec_response_api.get(0).unwrap().value.unwrap() * 100000000.) as u64;
+    // serialized_data.values.push(value);
+    let data_to_append = get_lite_data_bytes_string(serialized_data);
+
+    // append the result of the above line to input data
+    let new_data = data + &*data_to_append;
+    // return the whole things
+    new_data
+}
+
+/// Function that will add at the end of the data the redstone specific data that we will craft
+/// It returns the data it got as input + extra, where extra is generated following redstone logic
+pub async fn get_packages(data: String, provider: String) -> String {
+    //ToDo Rename this
+    let vec_response_api = get_package("https://api.redstone.finance/packages/latest?provider={provider}".parse().unwrap(), provider).await;
+
+    let mut serialized_data = SerializedPriceData {
+        symbols: vec![],
+        values: vec![],
+        timestamp: 0,
+        lite_sig: String::new(),
+    };
+
+    serialized_data.timestamp = vec_response_api.timestamp.unwrap();
+    serialized_data.lite_sig = vec_response_api.lite_signature.clone().unwrap();
+    for r in vec_response_api.prices {
         serialized_data.symbols.push(r.symbol.unwrap());
         serialized_data.values.push((r.value.unwrap() * 100000000.) as u64);
     }
@@ -98,20 +130,20 @@ mod tests {
 
     #[tokio::test]
     async fn it_works_for_one_asset() {
-        let result = add_redstone_data("".parse().unwrap(), ["AVAX".to_string()].to_vec(), "redstone-avalanche-prod-1".to_string()).await;
+        let result = get_prices("".parse().unwrap(), ["AVAX".to_string()].to_vec(), "redstone-avalanche-prod-1".to_string()).await;
         assert_ne!(result, "");
     }
 
     #[tokio::test]
     async fn it_works_for_two_assets() {
-        let result = add_redstone_data("".parse().unwrap(), ["AVAX".to_string(), "ETH".to_string()].to_vec(), "redstone-avalanche-prod-1".to_string()).await;
+        let result = get_prices("".parse().unwrap(), ["AVAX".to_string(), "ETH".to_string()].to_vec(), "redstone-avalanche-prod-1".to_string()).await;
         println!("{:?}", result);
         assert_ne!(result, "");
     }
 
     #[tokio::test]
     async fn it_works_for_ten_assets() {
-        let result = add_redstone_data("".parse().unwrap(), [
+        let result = get_prices("".parse().unwrap(), [
             "AVAX".to_string(),
             "ETH".to_string(),
             "BTC".to_string(),
@@ -123,6 +155,13 @@ mod tests {
             "QI".to_string(),
             "USDC".to_string(),
         ].to_vec(), "redstone-avalanche-prod-1".to_string()).await;
+        println!("{:?}", result);
+        assert_ne!(result, "");
+    }
+
+    #[tokio::test]
+    async fn it_works_for_a_package() {
+        let result = get_packages("".parse().unwrap(), "redstone-avalanche-prod-1".to_string()).await;
         println!("{:?}", result);
         assert_ne!(result, "");
     }

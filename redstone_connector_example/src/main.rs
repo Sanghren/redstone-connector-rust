@@ -15,7 +15,7 @@ use tokio::time::{sleep, Duration};
 abigen!(ExampleContractAvalancheProd, "./abi/example_contract_avalanche_prod.abi");
 use crate::rest::ResponseApi;
 use hex_literal::hex;
-use redstone_connector_rust::add_redstone_data;
+use redstone_connector_rust::get_prices;
 use reqwest::header::{CACHE_CONTROL, CONTENT_TYPE, PRAGMA, USER_AGENT};
 
 #[tokio::main]
@@ -77,7 +77,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Data here is crafted from redstone connector . I just copy pasted the data generate by the ts
     // lib. It is timestamped
     let mut data = String::from("da93d0d1");
-    data = add_redstone_data(data, ["AVAX".to_string()].to_vec()).await;
+    data = get_prices(data, ["AVAX".to_string()].to_vec()).await;
 
     println!("After appending vanilla and generated data -- {:?}", data);
 
