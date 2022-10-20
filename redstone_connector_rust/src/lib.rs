@@ -40,7 +40,7 @@ pub async fn get_prices(data: String, vec_assets: Vec<String>, provider: String)
     serialized_data.lite_sig = vec_response_api.get(0).unwrap().lite_evm_signature.clone().unwrap();
     for r in vec_response_api {
         serialized_data.symbols.push(r.symbol.unwrap());
-        serialized_data.values.push((r.value.unwrap() * 100000000.) as u64);
+        serialized_data.values.push((r.value.unwrap() * 100000000.).round() as u64);
     }
 
     // ToDo It must work for an array with more than 1 asset
