@@ -7,7 +7,7 @@ extern crate strfmt;
 
 use strfmt::strfmt;
 use std::collections::HashMap;
-use log::{debug, trace};
+use log::{debug, error, trace};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
@@ -46,7 +46,7 @@ pub async fn get_price(url: String, asset: Option<String>, provider: String) -> 
         price_response = vec_price_response;
     }
 
-    trace!("Raw response from Redstone Api : {:?}", price_response);
+    error!("Raw response from Redstone Api : {:?}", price_response);
 
     price_response
 }
