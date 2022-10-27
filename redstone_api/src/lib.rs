@@ -46,6 +46,8 @@ pub async fn get_price(url: String, asset: Option<String>, provider: String) -> 
         price_response = vec_price_response;
     }
 
+    trace!("Raw response from Redstone Api : {:?}", price_response);
+
     price_response
 }
 
