@@ -128,6 +128,7 @@ pub struct Source {
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Price {
+    pub _id: Option<String>,
     pub symbol: Option<String>,
     pub value: Option<f64>,
 }
