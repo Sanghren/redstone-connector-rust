@@ -3,9 +3,11 @@
 //! Will provides functions to interact with Redstone's
 //! [`Redstone`]: https://redstone.finance/
 
+use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Debug;
 use ethers::abi::AbiEncode;
+use ethers::utils::__serde_json::to_vec;
 use redstone_api::{get_package, get_price};
 
 /// Function that will add at the end of the data the redstone specific data that we will craft
@@ -30,8 +32,7 @@ pub async fn get_prices(data: String, vec_assets: Vec<String>, provider: String)
     let vec_response_api = get_price("https://api.redstone.finance/prices?{symbol}={assets}&provider={provider}".parse().unwrap(), assets, provider).await;
 
     let mut serialized_data = SerializedPriceData {
-        symbols: vec![],
-        values: vec![],
+        map_symbol_value: HashMap::new(),
         timestamp: 0,
         lite_sig: String::new(),
     };
@@ -39,8 +40,9 @@ pub async fn get_prices(data: String, vec_assets: Vec<String>, provider: String)
     serialized_data.timestamp = vec_response_api.get(0).unwrap().timestamp.unwrap();
     serialized_data.lite_sig = vec_response_api.get(0).unwrap().lite_evm_signature.clone().unwrap();
     for r in vec_response_api {
-        serialized_data.symbols.push(r.symbol.unwrap());
-        serialized_data.values.push((r.value.unwrap() * 100000000.).round() as u64);
+        serialized_data.map_symbol_value.insert(r.symbol.unwrap(), (r.value.unwrap() * 100000000.).round() as u64);
+        // serialized_data.symbols.push(r.symbol.unwrap());
+        // serialized_data.values.push((r.value.unwrap() * 100000000.).round() as u64);
     }
 
     // ToDo It must work for an array with more than 1 asset
@@ -62,8 +64,7 @@ pub async fn get_packages(data: String, provider: String) -> String {
     let vec_response_api = get_package("https://api.redstone.finance/packages/latest?provider={provider}".parse().unwrap(), provider).await;
 
     let mut serialized_data = SerializedPriceData {
-        symbols: vec![],
-        values: vec![],
+        map_symbol_value: HashMap::new(),
         timestamp: 0,
         lite_sig: String::new(),
     };
@@ -71,8 +72,9 @@ pub async fn get_packages(data: String, provider: String) -> String {
     serialized_data.timestamp = vec_response_api.timestamp.unwrap();
     serialized_data.lite_sig = vec_response_api.lite_signature.clone().unwrap();
     for r in vec_response_api.prices {
-        serialized_data.symbols.push(r.symbol.unwrap());
-        serialized_data.values.push((r.value.unwrap() * 100000000.).round() as u64);
+        serialized_data.map_symbol_value.insert(r.symbol.unwrap(), (r.value.unwrap() * 100000000.).round() as u64);
+        // serialized_data.symbols.push(r.symbol.unwrap());
+        // serialized_data.values.push((r.value.unwrap() as u128 * 100000000.).round() as u64);
     }
     println!("OYHHH -- {:?}", serialized_data);
     // ToDo It must work for an array with more than 1 asset
@@ -90,9 +92,31 @@ pub async fn get_packages(data: String, provider: String) -> String {
 pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
     let mut data = String::new();
 
-    for (index, symbol) in price_data.symbols.into_iter().enumerate() {
+    let data_order = [
+        "AVAX",
+        "BTC",
+        "ETH",
+        "FRAX",
+        "LINK",
+        "PNG",
+        "PNG_AVAX_USDC_LP",
+        "QI",
+        "SAV2",
+        "TJ_AVAX_USDC_LP",
+        "USDC",
+        "USDT",
+        "XAVA",
+        "YAK",
+        "YYAV3SA1",
+        "YY_TJ_AVAX_USDC_LP",
+        "sAVAX"
+    ].to_vec();
+
+
+
+    for (_, symbol) in data_order.into_iter().enumerate() {
         let symbol = symbol;
-        let value = price_data.values.get(index).unwrap();
+        let value = price_data.map_symbol_value.get(symbol).unwrap();
         let b32 = ethers::utils::format_bytes32_string(&*symbol).unwrap();
         let b32_hex = b32.encode_hex();
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
@@ -105,7 +129,7 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
 
     data += timestamp_hex_stripped;
 
-    let len_hex = format!("{:#04x}", price_data.values.len());
+    let len_hex = format!("{:#04x}", price_data.map_symbol_value.len());
     let len_hex = len_hex.strip_prefix("0x").unwrap();
 
     data += len_hex;
@@ -121,8 +145,7 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
 
 #[derive(Debug)]
 pub struct SerializedPriceData {
-    symbols: Vec<String>,
-    values: Vec<u64>,
+    map_symbol_value: HashMap<String,u64>,
     timestamp: u64,
     lite_sig: String,
 }
