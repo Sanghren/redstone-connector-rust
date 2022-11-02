@@ -109,7 +109,8 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         "YAK",
         "YYAV3SA1",
         "YY_TJ_AVAX_USDC_LP",
-        "sAVAX"
+        "sAVAX",
+        "MOO_TJ_AVAX_USDC_LP",
     ].to_vec();
 
 
