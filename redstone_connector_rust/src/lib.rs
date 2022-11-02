@@ -98,6 +98,7 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         "ETH",
         "FRAX",
         "LINK",
+        "MOO_TJ_AVAX_USDC_LP",
         "PNG",
         "PNG_AVAX_USDC_LP",
         "QI",
@@ -110,7 +111,6 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         "YYAV3SA1",
         "YY_TJ_AVAX_USDC_LP",
         "sAVAX",
-        "MOO_TJ_AVAX_USDC_LP",
     ].to_vec();
 
 
