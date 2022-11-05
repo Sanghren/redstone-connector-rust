@@ -46,8 +46,8 @@ pub async fn get_price(url: String, asset: Option<String>, provider: String) -> 
         price_response = vec_price_response;
     }
 
-    eprintln!("Raw response from Redstone Api : {:?}", price_response);
-    error!("Raw response from Redstone Api : {:?}", price_response);
+    // eprintln!("Raw response from Redstone Api : {:?}", price_response);
+    // error!("Raw response from Redstone Api : {:?}", price_response);
 
     price_response
 }
@@ -64,8 +64,8 @@ pub async fn get_package(url: String, provider: String) -> RedstonePackageApiRes
     let response = req_client.get(formatted_call).send().await.unwrap();
     let mut price_response = response.json().await.unwrap();
 
-    eprintln!("Raw response from Redstone Api : {:?}", price_response);
-    error!("Raw response from Redstone Api : {:?}", price_response);
+    // eprintln!("Raw response from Redstone Api : {:?}", price_response);
+    // error!("Raw response from Redstone Api : {:?}", price_response);
 
     price_response
 }
