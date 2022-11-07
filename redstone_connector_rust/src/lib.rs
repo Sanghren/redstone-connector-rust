@@ -76,7 +76,6 @@ pub async fn get_packages(data: String, provider: String) -> String {
         // serialized_data.symbols.push(r.symbol.unwrap());
         // serialized_data.values.push((r.value.unwrap() as u128 * 100000000.).round() as u64);
     }
-    println!("OYHHH -- {:?}", serialized_data);
     // ToDo It must work for an array with more than 1 asset
     // serialized_data.symbols.push(vec_response_api.get(0).unwrap().symbol.clone().unwrap());
     // let value = (vec_response_api.get(0).unwrap().value.unwrap() * 100000000.) as u64;
@@ -112,7 +111,6 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         "YY_TJ_AVAX_USDC_LP",
         "sAVAX",
     ].to_vec();
-
 
 
     for (_, symbol) in data_order.into_iter().enumerate() {
