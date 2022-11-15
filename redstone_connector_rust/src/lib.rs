@@ -8,11 +8,12 @@ use std::fmt;
 use std::fmt::Debug;
 use ethers::abi::AbiEncode;
 use ethers::utils::__serde_json::to_vec;
+use log::{error, info, trace};
 use redstone_api::{get_package, get_price};
 
 /// Function that will add at the end of the data the redstone specific data that we will craft
 /// It returns the data it got as input + extra, where extra is generated following redstone logic
-pub async fn get_prices(data: String, vec_assets: Vec<String>, provider: String) -> String {
+pub async fn get_prices(data: String, vec_assets: Vec<String>, provider: String, vec_token_order: Vec<&str>) -> String {
     let mut assets: Option<String> = Some(String::new());
     if vec_assets.is_empty() {
         assets = None;
@@ -49,7 +50,7 @@ pub async fn get_prices(data: String, vec_assets: Vec<String>, provider: String)
     // serialized_data.symbols.push(vec_response_api.get(0).unwrap().symbol.clone().unwrap());
     // let value = (vec_response_api.get(0).unwrap().value.unwrap() * 100000000.) as u64;
     // serialized_data.values.push(value);
-    let data_to_append = get_lite_data_bytes_string(serialized_data);
+    let data_to_append = get_lite_data_bytes_string(serialized_data, vec_token_order);
 
     // append the result of the above line to input data
     let new_data = data + &*data_to_append;
@@ -59,7 +60,7 @@ pub async fn get_prices(data: String, vec_assets: Vec<String>, provider: String)
 
 /// Function that will add at the end of the data the redstone specific data that we will craft
 /// It returns the data it got as input + extra, where extra is generated following redstone logic
-pub async fn get_packages(data: String, provider: String) -> String {
+pub async fn get_packages(data: String, provider: String, vec_token_order: Vec<&str>) -> String {
     //ToDo Rename this
     let vec_response_api = get_package("https://api.redstone.finance/packages/latest?provider={provider}".parse().unwrap(), provider).await;
 
@@ -80,7 +81,7 @@ pub async fn get_packages(data: String, provider: String) -> String {
     // serialized_data.symbols.push(vec_response_api.get(0).unwrap().symbol.clone().unwrap());
     // let value = (vec_response_api.get(0).unwrap().value.unwrap() * 100000000.) as u64;
     // serialized_data.values.push(value);
-    let data_to_append = get_lite_data_bytes_string(serialized_data);
+    let data_to_append = get_lite_data_bytes_string(serialized_data, vec_token_order);
 
     // append the result of the above line to input data
     let new_data = data + &*data_to_append;
@@ -88,33 +89,12 @@ pub async fn get_packages(data: String, provider: String) -> String {
     new_data
 }
 
-pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
+pub fn get_lite_data_bytes_string(price_data: SerializedPriceData, vec_token_order: Vec<&str>) -> String {
     let mut data = String::new();
 
-    let data_order = [
-        "AVAX",
-        "BTC",
-        "ETH",
-        "FRAX",
-        "LINK",
-        "MOO_TJ_AVAX_USDC_LP",
-        "PNG",
-        "PNG_AVAX_USDC_LP",
-        "QI",
-        "SAV2",
-        "TJ_AVAX_USDC_LP",
-        "USDC",
-        "USDT",
-        "XAVA",
-        "YAK",
-        "YYAV3SA1",
-        "YY_TJ_AVAX_USDC_LP",
-        "sAVAX",
-    ].to_vec();
-
-
-    for (_, symbol) in data_order.into_iter().enumerate() {
+    for (_, symbol) in vec_token_order.into_iter().enumerate() {
         let symbol = symbol;
+        trace!("Processing information about {:?}", symbol);
         let value = price_data.map_symbol_value.get(symbol).unwrap();
         let b32 = ethers::utils::format_bytes32_string(&*symbol).unwrap();
         let b32_hex = b32.encode_hex();
@@ -155,13 +135,51 @@ mod tests {
 
     #[tokio::test]
     async fn it_works_for_one_asset() {
-        let result = get_prices("".parse().unwrap(), ["AVAX".to_string()].to_vec(), "redstone-avalanche-prod-1".to_string()).await;
+        let result = get_prices("".parse().unwrap(), ["AVAX".to_string()].to_vec(), "redstone-avalanche-prod-1".to_string(), [
+            "AVAX",
+            "BTC",
+            "ETH",
+            "FRAX",
+            "LINK",
+            "MOO_TJ_AVAX_USDC_LP",
+            "PNG",
+            "PNG_AVAX_USDC_LP",
+            "QI",
+            "SAV2",
+            "TJ_AVAX_USDC_LP",
+            "USDC",
+            "USDT",
+            "XAVA",
+            "YAK",
+            "YYAV3SA1",
+            "YY_TJ_AVAX_USDC_LP",
+            "sAVAX",
+        ].to_vec()).await;
         assert_ne!(result, "");
     }
 
     #[tokio::test]
     async fn it_works_for_two_assets() {
-        let result = get_prices("".parse().unwrap(), ["AVAX".to_string(), "ETH".to_string()].to_vec(), "redstone-avalanche-prod-1".to_string()).await;
+        let result = get_prices("".parse().unwrap(), ["AVAX".to_string(), "ETH".to_string()].to_vec(), "redstone-avalanche-prod-1".to_string(), [
+            "AVAX",
+            "BTC",
+            "ETH",
+            "FRAX",
+            "LINK",
+            "MOO_TJ_AVAX_USDC_LP",
+            "PNG",
+            "PNG_AVAX_USDC_LP",
+            "QI",
+            "SAV2",
+            "TJ_AVAX_USDC_LP",
+            "USDC",
+            "USDT",
+            "XAVA",
+            "YAK",
+            "YYAV3SA1",
+            "YY_TJ_AVAX_USDC_LP",
+            "sAVAX",
+        ].to_vec()).await;
         println!("{:?}", result);
         assert_ne!(result, "");
     }
@@ -179,14 +197,54 @@ mod tests {
             "YAK".to_string(),
             "QI".to_string(),
             "USDC".to_string(),
-        ].to_vec(), "redstone-avalanche-prod-1".to_string()).await;
+        ].to_vec(), "redstone-avalanche-prod-1".to_string(),
+                                [
+                                    "AVAX",
+                                    "BTC",
+                                    "ETH",
+                                    "FRAX",
+                                    "LINK",
+                                    "MOO_TJ_AVAX_USDC_LP",
+                                    "PNG",
+                                    "PNG_AVAX_USDC_LP",
+                                    "QI",
+                                    "SAV2",
+                                    "TJ_AVAX_USDC_LP",
+                                    "USDC",
+                                    "USDT",
+                                    "XAVA",
+                                    "YAK",
+                                    "YYAV3SA1",
+                                    "YY_TJ_AVAX_USDC_LP",
+                                    "sAVAX",
+                                ].to_vec()).await;
         println!("{:?}", result);
         assert_ne!(result, "");
     }
 
     #[tokio::test]
     async fn it_works_for_a_package() {
-        let result = get_packages("".parse().unwrap(), "redstone-avalanche-prod-1".to_string()).await;
+        let result = get_packages("".parse().unwrap(), "redstone-avalanche-prod-1".to_string(),
+                                  [
+                                      "AVAX",
+                                      "BTC",
+                                      "ETH",
+                                      "FRAX",
+                                      "LINK",
+                                      "MOO_TJ_AVAX_USDC_LP",
+                                      "PNG",
+                                      "PNG_AVAX_USDC_LP",
+                                      "QI",
+                                      "SAV2",
+                                      "TJ_AVAX_USDC_LP",
+                                      "USDC",
+                                      "USDT",
+                                      "XAVA",
+                                      "YAK",
+                                      "YYAV3SA1",
+                                      "YY_TJ_AVAX_USDC_LP",
+                                      "sAVAX",
+                                  ].to_vec()).await;
         println!("{:?}", result);
         assert_ne!(result, "");
     }

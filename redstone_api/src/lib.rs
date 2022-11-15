@@ -154,7 +154,7 @@ mod tests {
     async fn it_should_get_a_price_result_for_all_assets() {
         let result = get_price("https://api.redstone.finance/prices?{symbol}={assets}&provider={provider}&limit=1".parse().unwrap(), None, "redstone-avalanche-prod-1".to_string()).await;
         println!("{:?}", result);
-        assert_eq!(result.len(), 17)
+        assert_eq!(result.len(), 30)
     }
 
     #[tokio::test]
