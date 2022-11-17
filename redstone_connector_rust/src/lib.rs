@@ -6,9 +6,10 @@
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Debug;
+use std::time::Duration;
 use ethers::abi::AbiEncode;
 use ethers::utils::__serde_json::to_vec;
-use log::{error, info, trace};
+use log::{debug, error, info, trace};
 use redstone_api::{get_package, get_price};
 
 /// Function that will add at the end of the data the redstone specific data that we will craft
@@ -103,6 +104,8 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData, vec_token_ord
         data += value.encode_hex().strip_prefix("0x").unwrap();
     }
     let timestamp = (price_data.timestamp as f64 / 1000.).ceil() as u64;
+    let tmstmp = Duration::from_secs(timestamp);
+    debug!("Timestamp : {:?}", tmstmp);
     let timestamp_hex = timestamp.encode_hex();
     let timestamp_hex_stripped = timestamp_hex.strip_prefix("0x").unwrap();
 
