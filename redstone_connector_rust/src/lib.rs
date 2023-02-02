@@ -63,7 +63,7 @@ pub async fn get_prices(data: String, vec_assets: Vec<String>, provider: String,
 /// It returns the data it got as input + extra, where extra is generated following redstone logic
 pub async fn get_packages(data: String, provider: String) -> String {
     //ToDo Rename this
-    let vec_response_api = get_package("https://api.redstone.finance/data-packages/latest/redstone-avalanche-prod".parse().unwrap()).await;
+    let vec_response_api = get_package("https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod".parse().unwrap()).await;
 
     let mut serialized_data = SerializedPriceData {
         map_symbol_value: HashMap::new(),
