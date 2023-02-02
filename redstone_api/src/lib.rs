@@ -54,14 +54,9 @@ pub async fn get_price(url: String, asset: Option<String>, provider: String) -> 
 
 /// Will perform a call to a specified URL and returns a vector of [ResponseApi]
 /// ToDo Make it more configurable (query filter and al')
-pub async fn get_package(url: String, provider: String) -> RedstonePackageApiResponse {
-    let mut vars = HashMap::new();
-    vars.insert("provider".to_string(), provider);
-    let fmt = url;
-
-    let formatted_call = strfmt(&fmt, &vars).unwrap();
+pub async fn get_package(url: String) -> RedstonePackageApiResponse {
     let req_client = Client::new();
-    let response = req_client.get(formatted_call).send().await.unwrap();
+    let response = req_client.get(url).send().await.unwrap();
     let mut price_response = response.json().await.unwrap();
 
     // eprintln!("Raw response from Redstone Api : {:?}", price_response);
@@ -159,7 +154,7 @@ mod tests {
 
     #[tokio::test]
     async fn it_should_get_a_package_result_for_one_asset() {
-        let result = get_package("https://api.redstone.finance/packages/latest?provider={provider}".parse().unwrap(), "redstone-avalanche-prod-1".to_string()).await;
+        let result = get_package("https://api.redstone.finance/packages/latest?provider={provider}".parse().unwrap()).await;
         println!("{:?}", result);
     }
 }

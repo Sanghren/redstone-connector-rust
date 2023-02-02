@@ -51,7 +51,7 @@ pub async fn get_prices(data: String, vec_assets: Vec<String>, provider: String,
     // serialized_data.symbols.push(vec_response_api.get(0).unwrap().symbol.clone().unwrap());
     // let value = (vec_response_api.get(0).unwrap().value.unwrap() * 100000000.) as u64;
     // serialized_data.values.push(value);
-    let data_to_append = get_lite_data_bytes_string(serialized_data, vec_token_order);
+    let data_to_append = get_lite_data_bytes_string(serialized_data);
 
     // append the result of the above line to input data
     let new_data = data + &*data_to_append;
@@ -61,9 +61,9 @@ pub async fn get_prices(data: String, vec_assets: Vec<String>, provider: String,
 
 /// Function that will add at the end of the data the redstone specific data that we will craft
 /// It returns the data it got as input + extra, where extra is generated following redstone logic
-pub async fn get_packages(data: String, provider: String, vec_token_order: Vec<&str>) -> String {
+pub async fn get_packages(data: String, provider: String) -> String {
     //ToDo Rename this
-    let vec_response_api = get_package("https://api.redstone.finance/packages/latest?provider={provider}".parse().unwrap(), provider).await;
+    let vec_response_api = get_package("https://api.redstone.finance/data-packages/latest/redstone-avalanche-prod".parse().unwrap()).await;
 
     let mut serialized_data = SerializedPriceData {
         map_symbol_value: HashMap::new(),
@@ -82,7 +82,7 @@ pub async fn get_packages(data: String, provider: String, vec_token_order: Vec<&
     // serialized_data.symbols.push(vec_response_api.get(0).unwrap().symbol.clone().unwrap());
     // let value = (vec_response_api.get(0).unwrap().value.unwrap() * 100000000.) as u64;
     // serialized_data.values.push(value);
-    let data_to_append = get_lite_data_bytes_string(serialized_data, vec_token_order);
+    let data_to_append = get_lite_data_bytes_string(serialized_data);
 
     // append the result of the above line to input data
     let new_data = data + &*data_to_append;
@@ -90,13 +90,12 @@ pub async fn get_packages(data: String, provider: String, vec_token_order: Vec<&
     new_data
 }
 
-pub fn get_lite_data_bytes_string(price_data: SerializedPriceData, vec_token_order: Vec<&str>) -> String {
+pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
     let mut data = String::new();
-
-    for (_, symbol) in vec_token_order.into_iter().enumerate() {
+    let len_map = price_data.map_symbol_value.len();
+    for (_, (symbol, value)) in price_data.map_symbol_value.into_iter().enumerate() {
         let symbol = symbol;
         trace!("Processing information about {:?}", symbol);
-        let value = price_data.map_symbol_value.get(symbol).unwrap();
         let b32 = ethers::utils::format_bytes32_string(&*symbol).unwrap();
         let b32_hex = b32.encode_hex();
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
@@ -111,7 +110,7 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData, vec_token_ord
 
     data += timestamp_hex_stripped;
 
-    let len_hex = format!("{:#04x}", price_data.map_symbol_value.len());
+    let len_hex = format!("{:#04x}", len_map);
     let len_hex = len_hex.strip_prefix("0x").unwrap();
 
     data += len_hex;
@@ -227,27 +226,7 @@ mod tests {
 
     #[tokio::test]
     async fn it_works_for_a_package() {
-        let result = get_packages("".parse().unwrap(), "redstone-avalanche-prod-1".to_string(),
-                                  [
-                                      "AVAX",
-                                      "BTC",
-                                      "ETH",
-                                      "FRAX",
-                                      "LINK",
-                                      "MOO_TJ_AVAX_USDC_LP",
-                                      "PNG",
-                                      "PNG_AVAX_USDC_LP",
-                                      "QI",
-                                      "SAV2",
-                                      "TJ_AVAX_USDC_LP",
-                                      "USDC",
-                                      "USDT",
-                                      "XAVA",
-                                      "YAK",
-                                      "YYAV3SA1",
-                                      "YY_TJ_AVAX_USDC_LP",
-                                      "sAVAX",
-                                  ].to_vec()).await;
+        let result = get_packages("".parse().unwrap(), "redstone-avalanche-prod-1".to_string()).await;
         println!("{:?}", result);
         assert_ne!(result, "");
     }

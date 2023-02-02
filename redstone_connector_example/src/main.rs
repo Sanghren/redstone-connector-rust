@@ -77,7 +77,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Data here is crafted from redstone connector . I just copy pasted the data generate by the ts
     // lib. It is timestamped
     let mut data = String::from("da93d0d1");
-    data = get_prices(data, ["AVAX".to_string()].to_vec()).await;
+    data = get_prices(data, [].to_vec(), "redstone-avalanche-prod-1".to_string()).await;
 
     println!("After appending vanilla and generated data -- {:?}", data);
 
