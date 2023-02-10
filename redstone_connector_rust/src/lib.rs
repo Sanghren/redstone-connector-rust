@@ -71,10 +71,10 @@ pub async fn get_packages(data: String, provider: String) -> String {
         lite_sig: String::new(),
     };
 
-    serialized_data.timestamp = vec_response_api.timestamp.unwrap();
-    serialized_data.lite_sig = vec_response_api.lite_signature.clone().unwrap();
-    for r in vec_response_api.prices {
-        serialized_data.map_symbol_value.insert(r.symbol.unwrap(), (r.value.unwrap() * 100000000.).round() as u64);
+    serialized_data.timestamp = vec_response_api.get("TJ_AVAX_USDT_LP").unwrap().timestamp_milliseconds as u64;
+    serialized_data.lite_sig = vec_response_api.get("___ALL_FEEDS___").unwrap().signature.to_string();
+    for r in vec_response_api {
+        serialized_data.map_symbol_value.insert(r.0, (r.1.dataPoints.get(0).unwrap().value * 100000000.).round() as u64);
         // serialized_data.symbols.push(r.symbol.unwrap());
         // serialized_data.values.push((r.value.unwrap() as u128 * 100000000.).round() as u64);
     }

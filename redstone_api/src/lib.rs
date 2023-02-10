@@ -54,10 +54,10 @@ pub async fn get_price(url: String, asset: Option<String>, provider: String) -> 
 
 /// Will perform a call to a specified URL and returns a vector of [ResponseApi]
 /// ToDo Make it more configurable (query filter and al')
-pub async fn get_package(url: String) -> RedstonePackageApiResponse {
+pub async fn get_package(url: String) -> HashMap<String, DataPointValue>  {
     let req_client = Client::new();
     let response = req_client.get(url).send().await.unwrap();
-    let mut price_response = response.json().await.unwrap();
+    let mut price_response: HashMap<String, DataPointValue> = response.json().await.unwrap();
 
     // eprintln!("Raw response from Redstone Api : {:?}", price_response);
     // error!("Raw response from Redstone Api : {:?}", price_response);
@@ -66,13 +66,26 @@ pub async fn get_package(url: String) -> RedstonePackageApiResponse {
 }
 
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Debug)]
 pub struct RedstonePackageApiResponse {
-    pub provider: Option<String>,
-    pub timestamp: Option<u64>,
-    #[serde(rename(deserialize = "liteSignature"))]
-    pub lite_signature: Option<String>,
-    pub prices: Vec<Price>,
+    pub token: Vec<DataPointValue>
+}
+
+#[derive(Deserialize, Debug)]
+pub struct DataPoint {
+    pub dataFeedId: String,
+    pub value: f64,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct DataPointValue {
+    pub timestamp_milliseconds: i64,
+    pub signature: String,
+    pub dataPoints: Vec<DataPoint>,
+    pub dataServiceId: String,
+    pub dataFeedId: String,
+    pub sources: Option<String>,
+    pub signerAddress: String,
 }
 
 /// Structure representing a response from Redstone's price API
