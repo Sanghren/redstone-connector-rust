@@ -22,7 +22,7 @@ pub async fn get_prices(data: String, vec_assets: Vec<&str>, provider: String, v
     let vec_len = vec_assets.len();
     for asset in vec_assets {
         let mut assetss = assets.unwrap();
-        assetss += asset.as_str();
+        assetss += asset;
         if vec_len > 1 {
             assetss += ",";
         }
