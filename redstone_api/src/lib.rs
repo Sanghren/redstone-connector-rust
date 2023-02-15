@@ -52,9 +52,51 @@ pub async fn get_price(url: String, asset: Option<String>, provider: String) -> 
     price_response
 }
 
+//
 /// Will perform a call to a specified URL and returns a vector of [ResponseApi]
 /// ToDo Make it more configurable (query filter and al')
-pub async fn get_package(url: String) -> HashMap<String, DataPointValue>  {
+pub async fn get_prices(url: String, asset: Option<String>, provider: String) -> Vec<RedstonePriceApiResponse> {
+    let mut vars = HashMap::new();
+    vars.insert("provider".to_string(), provider);
+    let fmt = url;
+    let mut multi_asset = true;
+    let is_some = asset.is_some();
+    let asset = asset.unwrap_or("".to_string());
+    if is_some {
+        multi_asset = asset.contains(",");
+
+        if multi_asset {
+            vars.insert("symbol".to_string(), "symbols".to_string());
+        } else {
+            vars.insert("symbol".to_string(), "symbol".to_string());
+        }
+        vars.insert("assets".to_string(), asset);
+    } else {
+        vars.insert("symbol".to_string(), "".to_string());
+        vars.insert("assets".to_string(), "".to_string());
+    }
+
+    let formatted_call = strfmt(&fmt, &vars).unwrap();
+    let req_client = Client::new();
+    let response = req_client.get(formatted_call).send().await.unwrap();
+    let mut price_response = Vec::new();
+    if multi_asset {
+        let map_price_response: HashMap<String, RedstonePriceApiResponse> = response.json().await.unwrap();
+        price_response = Vec::from_iter(map_price_response.values().cloned());
+    } else {
+        let vec_price_response: Vec<RedstonePriceApiResponse> = response.json().await.unwrap();
+        price_response = vec_price_response;
+    }
+
+    // eprintln!("Raw response from Redstone Api : {:?}", price_response);
+    // error!("Raw response from Redstone Api : {:?}", price_response);
+
+    price_response
+}
+
+/// Will perform a call to a specified URL and returns a vector of [ResponseApi]
+/// ToDo Make it more configurable (query filter and al')
+pub async fn get_package(url: String) -> HashMap<String, DataPointValue> {
     let req_client = Client::new();
     let response = req_client.get(url).send().await.unwrap();
     let mut price_response: HashMap<String, DataPointValue> = response.json().await.unwrap();
@@ -68,7 +110,7 @@ pub async fn get_package(url: String) -> HashMap<String, DataPointValue>  {
 
 #[derive(Deserialize, Debug)]
 pub struct RedstonePackageApiResponse {
-    pub token: Vec<DataPointValue>
+    pub token: Vec<DataPointValue>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -145,10 +187,12 @@ pub struct Price {
 mod tests {
     use super::*;
 
+    // https://api.redstone.finance/prices?provider=redstone&symbols=AVAX,USDC,BTC,ETH,GLP,USDT,sAVAX,QI,PNG,PTP
     #[tokio::test]
     async fn it_should_get_a_price_result_for_one_asset() {
-        let result = get_price("https://api.redstone.finance/prices?{symbol}={assets}&provider={provider}&limit=1".parse().unwrap(), Some("AVAX".to_string()), "redstone-avalanche-prod-1".to_string()).await;
-        assert_eq!(result.len(), 1)
+        let result = get_prices("https://api.redstone.finance/prices?provider={provider}&symbols={assets}".parse().unwrap(), Some("AVAX,USDC,BTC,ETH,GLP,USDT,sAVAX,QI,PNG,PTP".to_string()), "redstone".to_string()).await;
+        println!("Result : {:?}", result);
+        assert_eq!(result.len(), 10)
     }
 
     #[tokio::test]
