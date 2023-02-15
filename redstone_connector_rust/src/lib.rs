@@ -14,7 +14,7 @@ use redstone_api::{get_package, get_price};
 
 /// Function that will add at the end of the data the redstone specific data that we will craft
 /// It returns the data it got as input + extra, where extra is generated following redstone logic
-pub async fn get_prices(data: String, vec_assets: Vec<String>, provider: String, vec_token_order: Vec<&str>) -> String {
+pub async fn get_prices(data: String, vec_assets: Vec<&str>, provider: String, vec_token_order: Vec<&str>) -> String {
     let mut assets: Option<String> = Some(String::new());
     if vec_assets.is_empty() {
         assets = None;
@@ -31,7 +31,7 @@ pub async fn get_prices(data: String, vec_assets: Vec<String>, provider: String,
     }
 
     //ToDo Rename this
-    let vec_response_api = get_price("https://api.redstone.finance/prices?{symbol}={assets}&provider={provider}".parse().unwrap(), assets, provider).await;
+    let vec_response_api = redstone_api::get_prices("https://api.redstone.finance/prices?provider={provider}&symbols={assets}".parse().unwrap(), assets, provider).await;
 
     let mut serialized_data = SerializedPriceData {
         map_symbol_value: HashMap::new(),
@@ -137,7 +137,7 @@ mod tests {
 
     #[tokio::test]
     async fn it_works_for_one_asset() {
-        let result = get_prices("".parse().unwrap(), ["AVAX".to_string()].to_vec(), "redstone-avalanche-prod-1".to_string(), [
+        let result = get_prices("".parse().unwrap(), ["AVAX"].to_vec(), "redstone-avalanche-prod-1".to_string(), [
             "AVAX",
             "BTC",
             "ETH",
@@ -162,7 +162,7 @@ mod tests {
 
     #[tokio::test]
     async fn it_works_for_two_assets() {
-        let result = get_prices("".parse().unwrap(), ["AVAX".to_string(), "ETH".to_string()].to_vec(), "redstone-avalanche-prod-1".to_string(), [
+        let result = get_prices("".parse().unwrap(), ["AVAX", "ETH"].to_vec(), "redstone-avalanche-prod-1".to_string(), [
             "AVAX",
             "BTC",
             "ETH",
@@ -189,16 +189,16 @@ mod tests {
     #[tokio::test]
     async fn it_works_for_ten_assets() {
         let result = get_prices("".parse().unwrap(), [
-            "AVAX".to_string(),
-            "ETH".to_string(),
-            "BTC".to_string(),
-            "USDT".to_string(),
-            "PNG".to_string(),
-            "XAVA".to_string(),
-            "LINK".to_string(),
-            "YAK".to_string(),
-            "QI".to_string(),
-            "USDC".to_string(),
+            "AVAX",
+            "ETH",
+            "BTC",
+            "USDT",
+            "PNG",
+            "XAVA",
+            "LINK",
+            "YAK",
+            "QI",
+            "USDC",
         ].to_vec(), "redstone-avalanche-prod-1".to_string(),
                                 [
                                     "AVAX",
