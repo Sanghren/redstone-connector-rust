@@ -2,13 +2,14 @@
 //!
 //! Will provides functions to interact with Redstone's
 //! [`Redstone`]: https://redstone.finance/
-
+use rustc_hex::ToHex;
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Debug;
 use std::time::Duration;
 use ethers::abi::AbiEncode;
 use ethers::utils::__serde_json::to_vec;
+use ethers::utils::{format_bytes32_string, hex};
 use log::{debug, error, info, trace};
 use redstone_api::{get_package, get_price};
 
@@ -71,10 +72,10 @@ pub async fn get_packages(data: String, provider: String) -> String {
         lite_sig: String::new(),
     };
 
-    serialized_data.timestamp = vec_response_api.get("TJ_AVAX_USDT_LP").unwrap().timestamp_milliseconds as u64;
-    serialized_data.lite_sig = vec_response_api.get("___ALL_FEEDS___").unwrap().signature.to_string();
+    serialized_data.timestamp = vec_response_api.get("TJ_AVAX_USDT_LP").unwrap().get(0).unwrap().timestampMilliseconds as u64;
+    serialized_data.lite_sig = vec_response_api.get("___ALL_FEEDS___").unwrap().get(0).unwrap().signature.to_string();
     for r in vec_response_api {
-        serialized_data.map_symbol_value.insert(r.0, (r.1.dataPoints.get(0).unwrap().value * 100000000.).round() as u64);
+        serialized_data.map_symbol_value.insert(r.0, (r.1.get(0).unwrap().dataPoints.get(0).unwrap().value * 100000000.).round() as u64);
         // serialized_data.symbols.push(r.symbol.unwrap());
         // serialized_data.values.push((r.value.unwrap() as u128 * 100000000.).round() as u64);
     }
@@ -110,18 +111,61 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
 
     data += timestamp_hex_stripped;
 
-    let len_hex = format!("{:#04x}", len_map);
-    let len_hex = len_hex.strip_prefix("0x").unwrap();
+    let data_point_size_hex = format!("{:#04x}", 20);
+    let data_point_size_hex = data_point_size_hex.strip_prefix("0x").unwrap();
 
-    data += len_hex;
+    data += data_point_size_hex;
+
+    let data_point_number_hex = format!("{:#04x}", 32);
+    let data_point_number_hex = data_point_number_hex.strip_prefix("0x").unwrap();
+
+    data += data_point_number_hex;
 
     let lite_sig = price_data.lite_sig.clone();
-    let lite_sig = lite_sig.strip_prefix("0x").unwrap();
+    let bytes32 = hex::encode(lite_sig.as_bytes());
+    // let lite_sig = format!("{:04x}", bytes32);
+    println!("{}", bytes32);
+    let lite_sig = bytes32.trim_start_matches("0x");
 
     data += lite_sig;
 
 
+    let package_number_hex = format!("{:#04x}", 1);
+    let package_number_hex = package_number_hex.strip_prefix("0x").unwrap();
+
+    data += package_number_hex;
+
+    let b32 = ethers::utils::format_bytes32_string("0.0.19#redstone-avalanche-prod").unwrap();
+    let b32_hex = b32.encode_hex();
+    let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
+
+    data += b32_hex_stripped;
+
+    let metadata_size_hex = format!("{:#04x}", 30);
+    let metadata_size_hex = metadata_size_hex.strip_prefix("0x").unwrap();
+
+    data += metadata_size_hex;
+
+    data += "000002ed57011e0000";
+
     data
+}
+
+fn string_to_bytes32(s: &str) -> String {
+    let mut bytes = [0u8; 32];
+    let string_bytes = s.as_bytes();
+
+    for (i, byte) in string_bytes.iter().enumerate() {
+        if i >= 32 {
+            break;
+        }
+        bytes[i] = *byte;
+    }
+
+    match std::str::from_utf8(&bytes) {
+        Ok(s) => String::from(s.trim_end_matches('\0')),
+        Err(_) => String::new(),
+    }
 }
 
 #[derive(Debug)]

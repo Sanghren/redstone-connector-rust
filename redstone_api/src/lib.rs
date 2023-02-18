@@ -96,10 +96,13 @@ pub async fn get_prices(url: String, asset: Option<String>, provider: String) ->
 
 /// Will perform a call to a specified URL and returns a vector of [ResponseApi]
 /// ToDo Make it more configurable (query filter and al')
-pub async fn get_package(url: String) -> HashMap<String, DataPointValue> {
+pub async fn get_package(url: String) -> HashMap<String, Vec<DataPointValue>> {
     let req_client = Client::new();
     let response = req_client.get(url).send().await.unwrap();
-    let mut price_response: HashMap<String, DataPointValue> = response.json().await.unwrap();
+    // let are = response.text().await;
+    // println!("{:?}", are);
+    // let mut price_response: HashMap<String, Vec<DataPointValue>> = HashMap::new();
+    let mut price_response: HashMap<String, Vec<DataPointValue>> = response.json().await.unwrap();
 
     // eprintln!("Raw response from Redstone Api : {:?}", price_response);
     // error!("Raw response from Redstone Api : {:?}", price_response);
@@ -121,7 +124,7 @@ pub struct DataPoint {
 
 #[derive(Deserialize, Debug)]
 pub struct DataPointValue {
-    pub timestamp_milliseconds: i64,
+    pub timestampMilliseconds: i64,
     pub signature: String,
     pub dataPoints: Vec<DataPoint>,
     pub dataServiceId: String,
