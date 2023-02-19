@@ -135,6 +135,7 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
     let lite_sig = price_data.lite_sig.clone();
     let bytes32 = hex::encode(lite_sig.as_bytes());
     // let lite_sig = format!("{:04x}", bytes32);
+    println!("{}", bytes32);
     let lite_sig = bytes32.trim_start_matches("0x");
 
     data += lite_sig;
