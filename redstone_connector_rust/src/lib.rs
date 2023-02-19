@@ -62,31 +62,41 @@ pub async fn get_prices(data: String, vec_assets: Vec<&str>, provider: String, v
 
 /// Function that will add at the end of the data the redstone specific data that we will craft
 /// It returns the data it got as input + extra, where extra is generated following redstone logic
-pub async fn get_packages(data: String, provider: String) -> String {
+pub async fn get_packages(data: String, number_of_data_package: usize) -> String {
     //ToDo Rename this
-    let vec_response_api = get_package("https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod".parse().unwrap()).await;
+    let map_response_api = get_package("https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod".parse().unwrap()).await;
 
-    let mut serialized_data = SerializedPriceData {
-        map_symbol_value: HashMap::new(),
-        timestamp: 0,
-        lite_sig: String::new(),
-    };
+    let mut i = 0_usize;
+    let mut new_data = data;
 
-    serialized_data.timestamp = vec_response_api.get("TJ_AVAX_USDT_LP").unwrap().get(0).unwrap().timestampMilliseconds as u64;
-    serialized_data.lite_sig = vec_response_api.get("___ALL_FEEDS___").unwrap().get(0).unwrap().signature.to_string();
-    for r in vec_response_api {
-        serialized_data.map_symbol_value.insert(r.0, (r.1.get(0).unwrap().dataPoints.get(0).unwrap().value * 100000000.).round() as u64);
-        // serialized_data.symbols.push(r.symbol.unwrap());
-        // serialized_data.values.push((r.value.unwrap() as u128 * 100000000.).round() as u64);
+    while i < number_of_data_package {
+        let mut serialized_data = SerializedPriceData {
+            map_symbol_value: HashMap::new(),
+            timestamp: 0,
+            lite_sig: String::new(),
+        };
+
+        serialized_data.timestamp = map_response_api.get("TJ_AVAX_USDT_LP").unwrap().get(i).unwrap().timestampMilliseconds as u64;
+        serialized_data.lite_sig = map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().signature.to_string();
+        for r in &map_response_api {
+            serialized_data.map_symbol_value.insert(r.0.clone(), (r.1.get(i).unwrap().dataPoints.get(0).unwrap().value * 100000000.).round() as u64);
+            // serialized_data.symbols.push(r.symbol.unwrap());
+            // serialized_data.values.push((r.value.unwrap() as u128 * 100000000.).round() as u64);
+        }
+        // ToDo It must work for an array with more than 1 asset
+        // serialized_data.symbols.push(vec_response_api.get(0).unwrap().symbol.clone().unwrap());
+        // let value = (vec_response_api.get(0).unwrap().value.unwrap() * 100000000.) as u64;
+        // serialized_data.values.push(value);
+        let data_to_append = get_lite_data_bytes_string(serialized_data);
+        new_data += &*data_to_append;
+        i += 1;
     }
-    // ToDo It must work for an array with more than 1 asset
-    // serialized_data.symbols.push(vec_response_api.get(0).unwrap().symbol.clone().unwrap());
-    // let value = (vec_response_api.get(0).unwrap().value.unwrap() * 100000000.) as u64;
-    // serialized_data.values.push(value);
-    let data_to_append = get_lite_data_bytes_string(serialized_data);
+
 
     // append the result of the above line to input data
-    let new_data = data + &*data_to_append;
+
+    add_meta_data_bytes(&mut new_data);
+
     // return the whole things
     new_data
 }
@@ -130,25 +140,27 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
     data += lite_sig;
 
 
+    data
+}
+
+fn add_meta_data_bytes(data: &mut String) {
     let package_number_hex = format!("{:#04x}", 1);
     let package_number_hex = package_number_hex.strip_prefix("0x").unwrap();
 
-    data += package_number_hex;
+    *data += package_number_hex;
 
     let b32 = ethers::utils::format_bytes32_string("0.0.19#redstone-avalanche-prod").unwrap();
     let b32_hex = b32.encode_hex();
     let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
 
-    data += b32_hex_stripped;
+    *data += b32_hex_stripped;
 
     let metadata_size_hex = format!("{:#04x}", 30);
     let metadata_size_hex = metadata_size_hex.strip_prefix("0x").unwrap();
 
-    data += metadata_size_hex;
+    *data += metadata_size_hex;
 
-    data += "000002ed57011e0000";
-
-    data
+    *data += "000002ed57011e0000";
 }
 
 fn string_to_bytes32(s: &str) -> String {
@@ -270,7 +282,7 @@ mod tests {
 
     #[tokio::test]
     async fn it_works_for_a_package() {
-        let result = get_packages("".parse().unwrap(), "redstone-avalanche-prod-1".to_string()).await;
+        let result = get_packages("".parse().unwrap(), 3).await;
         println!("{:?}", result);
         assert_ne!(result, "");
     }
