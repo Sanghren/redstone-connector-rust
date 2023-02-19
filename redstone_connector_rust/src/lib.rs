@@ -62,7 +62,7 @@ pub async fn get_prices(data: String, vec_assets: Vec<&str>, provider: String, v
 
 /// Function that will add at the end of the data the redstone specific data that we will craft
 /// It returns the data it got as input + extra, where extra is generated following redstone logic
-pub async fn get_packages(data: String, number_of_data_package: usize) -> String {
+pub async fn get_packages(data: String, number_of_data_package: usize, order_of_assets: Vec<String>) -> String {
     //ToDo Rename this
     let map_response_api = get_package("https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod".parse().unwrap()).await;
 
@@ -87,7 +87,7 @@ pub async fn get_packages(data: String, number_of_data_package: usize) -> String
         // serialized_data.symbols.push(vec_response_api.get(0).unwrap().symbol.clone().unwrap());
         // let value = (vec_response_api.get(0).unwrap().value.unwrap() * 100000000.) as u64;
         // serialized_data.values.push(value);
-        let data_to_append = get_lite_data_bytes_string(serialized_data);
+        let data_to_append = get_lite_data_bytes_string(serialized_data, order_of_assets);
         new_data += &*data_to_append;
         i += 1;
     }
@@ -101,7 +101,7 @@ pub async fn get_packages(data: String, number_of_data_package: usize) -> String
     new_data
 }
 
-pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
+pub fn get_lite_data_bytes_string(price_data: SerializedPriceData, order_of_assets: Vec<String>) -> String {
     let mut data = String::new();
     let len_map = price_data.map_symbol_value.len();
     for (_, (symbol, value)) in price_data.map_symbol_value.into_iter().enumerate() {
@@ -283,7 +283,46 @@ mod tests {
 
     #[tokio::test]
     async fn it_works_for_a_package() {
-        let result = get_packages("".parse().unwrap(), 3).await;
+        let result = get_packages(
+            "".parse().unwrap(),
+            3,
+            [
+                "AVAX".to_string(),
+                "BTC".to_string(),
+                "BUSD".to_string(),
+                "ETH".to_string(),
+                "GLP".to_string(),
+                "GMX".to_string(),
+                "JOE".to_string(),
+                "LINK".to_string(),
+                "MOO_TJ_AVAX_USDC_LP".to_string(),
+                "PNG".to_string(),
+                "PNG_AVAX_ETH_LP".to_string(),
+                "PNG_AVAX_USDC_LP".to_string(),
+                "PNG_AVAX_USDT_LP".to_string(),
+                "PTP".to_string(),
+                "QI".to_string(),
+                "TJ_AVAX_BTC_LP".to_string(),
+                "TJ_AVAX_ETH_LP".to_string(),
+                "TJ_AVAX_USDC_LP".to_string(),
+                "TJ_AVAX_USDT_LP".to_string(),
+                "TJ_AVAX_sAVAX_LP".to_string(),
+                "USDC".to_string(),
+                "USDT".to_string(),
+                "XAVA".to_string(),
+                "YAK".to_string(),
+                "YYAV3SA1".to_string(),
+                "YY_AAVE_AVAX".to_string(),
+                "YY_GLP".to_string(),
+                "YY_PNG_AVAX_ETH_LP".to_string(),
+                "YY_PNG_AVAX_USDC_LP".to_string(),
+                "YY_PTP_sAVAX".to_string(),
+                "YY_TJ_AVAX_ETH_LP".to_string(),
+                "YY_TJ_AVAX_USDC_LP".to_string(),
+                "YY_TJ_AVAX_sAVAX_LP".to_string(),
+                "Q¡sAVAX".to_string(),
+            ].to_vec()
+        ).await;
         println!("{:?}", result);
         assert_ne!(result, "");
     }
