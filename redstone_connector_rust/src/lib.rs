@@ -3,7 +3,7 @@
 //! Will provides functions to interact with Redstone's
 //! [`Redstone`]: https://redstone.finance/
 use rustc_hex::ToHex;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fmt;
 use std::fmt::Debug;
 use std::time::Duration;
@@ -35,7 +35,7 @@ pub async fn get_prices(data: String, vec_assets: Vec<&str>, provider: String, v
     let vec_response_api = redstone_api::get_prices("https://api.redstone.finance/prices?provider={provider}&symbols={assets}".parse().unwrap(), assets, provider).await;
 
     let mut serialized_data = SerializedPriceData {
-        map_symbol_value: HashMap::new(),
+        map_symbol_value: BTreeMap::new(),
         timestamp: 0,
         lite_sig: String::new(),
     };
@@ -69,11 +69,10 @@ pub async fn get_packages(data: String, number_of_data_package: usize, order_of_
     let mut i = 0_usize;
     let mut new_data = data;
 
-
     // order of assets ....
     while i < number_of_data_package {
         let mut serialized_data = SerializedPriceData {
-            map_symbol_value: HashMap::new(),
+            map_symbol_value: BTreeMap::new(),
             timestamp: 0,
             lite_sig: String::new(),
         };
@@ -111,7 +110,7 @@ pub async fn get_packages(data: String, number_of_data_package: usize, order_of_
 pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
     let mut data = String::new();
     let len_map = price_data.map_symbol_value.len();
-    for (_, (symbol, value)) in price_data.map_symbol_value.into_iter().enumerate() {
+    for (symbol, value) in price_data.map_symbol_value.iter() {
         let symbol = symbol;
         trace!("Processing information about {:?}", symbol);
         let b32 = ethers::utils::format_bytes32_string(&*symbol).unwrap();
@@ -190,7 +189,7 @@ fn string_to_bytes32(s: &str) -> String {
 
 #[derive(Debug)]
 pub struct SerializedPriceData {
-    map_symbol_value: HashMap<String, u64>,
+    map_symbol_value: BTreeMap<String, u64>,
     timestamp: u64,
     lite_sig: String,
 }
