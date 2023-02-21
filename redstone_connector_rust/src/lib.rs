@@ -72,13 +72,13 @@ pub async fn get_packages(data: String, number_of_data_package: usize, order_of_
 
     // order of assets ....
     while i < number_of_data_package {
-        for asset in &order_of_assets {
-            let mut serialized_data = SerializedPriceData {
-                map_symbol_value: HashMap::new(),
-                timestamp: 0,
-                lite_sig: String::new(),
-            };
+        let mut serialized_data = SerializedPriceData {
+            map_symbol_value: HashMap::new(),
+            timestamp: 0,
+            lite_sig: String::new(),
+        };
 
+        for asset in &order_of_assets {
             serialized_data.timestamp = map_response_api.get("TJ_AVAX_USDT_LP").unwrap().get(i).unwrap().timestampMilliseconds as u64;
             serialized_data.lite_sig = map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().signature.to_string();
 
@@ -93,13 +93,11 @@ pub async fn get_packages(data: String, number_of_data_package: usize, order_of_
             // serialized_data.symbols.push(vec_response_api.get(0).unwrap().symbol.clone().unwrap());
             // let value = (vec_response_api.get(0).unwrap().value.unwrap() * 100000000.) as u64;
             // serialized_data.values.push(value);
-            let data_to_append = get_lite_data_bytes_string(serialized_data);
-            new_data += &*data_to_append;
         }
+        let data_to_append = get_lite_data_bytes_string(serialized_data);
+        new_data += &*data_to_append;
         i += 1;
     }
-
-
 
 
     // append the result of the above line to input data
