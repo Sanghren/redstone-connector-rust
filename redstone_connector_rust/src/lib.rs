@@ -69,28 +69,37 @@ pub async fn get_packages(data: String, number_of_data_package: usize, order_of_
     let mut i = 0_usize;
     let mut new_data = data;
 
-    while i < number_of_data_package {
-        let mut serialized_data = SerializedPriceData {
-            map_symbol_value: HashMap::new(),
-            timestamp: 0,
-            lite_sig: String::new(),
-        };
 
-        serialized_data.timestamp = map_response_api.get("TJ_AVAX_USDT_LP").unwrap().get(i).unwrap().timestampMilliseconds as u64;
-        serialized_data.lite_sig = map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().signature.to_string();
-        for r in &map_response_api {
-            serialized_data.map_symbol_value.insert(r.0.clone(), (r.1.get(i).unwrap().dataPoints.get(0).unwrap().value * 100000000.).round() as u64);
-            // serialized_data.symbols.push(r.symbol.unwrap());
-            // serialized_data.values.push((r.value.unwrap() as u128 * 100000000.).round() as u64);
+    // order of assets ....
+    while i < number_of_data_package {
+        for asset in &order_of_assets {
+            let mut serialized_data = SerializedPriceData {
+                map_symbol_value: HashMap::new(),
+                timestamp: 0,
+                lite_sig: String::new(),
+            };
+
+            serialized_data.timestamp = map_response_api.get("TJ_AVAX_USDT_LP").unwrap().get(i).unwrap().timestampMilliseconds as u64;
+            serialized_data.lite_sig = map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().signature.to_string();
+
+            println!("Key {}", asset);
+            serialized_data.map_symbol_value.insert(asset.clone(), (map_response_api.get(asset).unwrap().get(0).unwrap().dataPoints.get(0).unwrap().value * 100000000.).round() as u64);
+            // for r in &map_response_api {
+            //     serialized_data.map_symbol_value.insert(r.0.clone(), (r.1.get(i).unwrap().dataPoints.get(0).unwrap().value * 100000000.).round() as u64);
+            //     // serialized_data.symbols.push(r.symbol.unwrap());
+            //     // serialized_data.values.push((r.value.unwrap() as u128 * 100000000.).round() as u64);
+            // }
+            // ToDo It must work for an array with more than 1 asset
+            // serialized_data.symbols.push(vec_response_api.get(0).unwrap().symbol.clone().unwrap());
+            // let value = (vec_response_api.get(0).unwrap().value.unwrap() * 100000000.) as u64;
+            // serialized_data.values.push(value);
+            let data_to_append = get_lite_data_bytes_string(serialized_data);
+            new_data += &*data_to_append;
         }
-        // ToDo It must work for an array with more than 1 asset
-        // serialized_data.symbols.push(vec_response_api.get(0).unwrap().symbol.clone().unwrap());
-        // let value = (vec_response_api.get(0).unwrap().value.unwrap() * 100000000.) as u64;
-        // serialized_data.values.push(value);
-        let data_to_append = get_lite_data_bytes_string(serialized_data, order_of_assets);
-        new_data += &*data_to_append;
         i += 1;
     }
+
+
 
 
     // append the result of the above line to input data
@@ -101,7 +110,7 @@ pub async fn get_packages(data: String, number_of_data_package: usize, order_of_
     new_data
 }
 
-pub fn get_lite_data_bytes_string(price_data: SerializedPriceData, order_of_assets: Vec<String>) -> String {
+pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
     let mut data = String::new();
     let len_map = price_data.map_symbol_value.len();
     for (_, (symbol, value)) in price_data.map_symbol_value.into_iter().enumerate() {
@@ -183,7 +192,7 @@ fn string_to_bytes32(s: &str) -> String {
 
 #[derive(Debug)]
 pub struct SerializedPriceData {
-    map_symbol_value: HashMap<String,u64>,
+    map_symbol_value: HashMap<String, u64>,
     timestamp: u64,
     lite_sig: String,
 }
@@ -320,8 +329,8 @@ mod tests {
                 "YY_TJ_AVAX_ETH_LP".to_string(),
                 "YY_TJ_AVAX_USDC_LP".to_string(),
                 "YY_TJ_AVAX_sAVAX_LP".to_string(),
-                "Q¡sAVAX".to_string(),
-            ].to_vec()
+                "sAVAX".to_string(),
+            ].to_vec(),
         ).await;
         println!("{:?}", result);
         assert_ne!(result, "");
