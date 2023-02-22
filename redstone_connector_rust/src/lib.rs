@@ -62,7 +62,10 @@ pub async fn get_prices(data: String, vec_assets: Vec<&str>, provider: String, v
 
 /// Function that will add at the end of the data the redstone specific data that we will craft
 /// It returns the data it got as input + extra, where extra is generated following redstone logic
-pub async fn get_packages(data: String, number_of_data_package: usize, order_of_assets: Vec<String>) -> String {
+pub async fn get_packages(data: String, number_of_data_package: usize, order_of_assets: Vec<String>, data_feeds: Vec<String>) -> String {
+
+    let data_feeds_ids = if data_feeds.is_empty() { ["___ALL_FEEDS___".to_string()].to_vec()} else {data_feeds};
+
     //ToDo Rename this
     let map_response_api = get_package("https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod".parse().unwrap()).await;
 
@@ -78,11 +81,11 @@ pub async fn get_packages(data: String, number_of_data_package: usize, order_of_
         };
 
         for asset in &order_of_assets {
-            serialized_data.timestamp = map_response_api.get("TJ_AVAX_USDT_LP").unwrap().get(i).unwrap().timestampMilliseconds as u64;
+            serialized_data.timestamp = map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().timestampMilliseconds as u64;
             serialized_data.lite_sig = map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().signature.to_string();
 
             println!("Key {}", asset);
-            serialized_data.map_symbol_value.insert(asset.clone(), (map_response_api.get(asset).unwrap().get(0).unwrap().dataPoints.get(0).unwrap().value * 100000000.).round() as u64);
+            serialized_data.map_symbol_value.insert(asset.clone(), (map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().dataPoints.get(0).unwrap().value * 100000000.).round() as u64);
             // for r in &map_response_api {
             //     serialized_data.map_symbol_value.insert(r.0.clone(), (r.1.get(i).unwrap().dataPoints.get(0).unwrap().value * 100000000.).round() as u64);
             //     // serialized_data.symbols.push(r.symbol.unwrap());
@@ -328,6 +331,7 @@ mod tests {
                 "YY_TJ_AVAX_sAVAX_LP".to_string(),
                 "sAVAX".to_string(),
             ].to_vec(),
+            ["___ALL_FEEDS___".to_string()].to_vec()
         ).await;
         println!("{:?}", result);
         assert_ne!(result, "");
