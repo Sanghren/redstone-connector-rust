@@ -2,14 +2,10 @@
 //!
 //! Will provides functions to interact with Redstone's
 //! [`Redstone`]: https://redstone.finance/
-use base64::prelude::*;
-use rustc_hex::ToHex;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt;
 use std::fmt::Debug;
 use std::time::Duration;
-use base64::{alphabet, encode, engine};
-use base64::alphabet::Alphabet;
 use ethers::abi::AbiEncode;
 use ethers::utils::__serde_json::to_vec;
 use ethers::utils::{format_bytes32_string, hex};
@@ -17,6 +13,7 @@ use log::{debug, error, info, trace};
 use redstone_api::{get_package, get_price};
 use data_encoding::BASE64;
 use data_encoding::HEXLOWER;
+use ethers::utils::hex::ToHex;
 
 /// Function that will add at the end of the data the redstone specific data that we will craft
 /// It returns the data it got as input + extra, where extra is generated following redstone logic
@@ -68,7 +65,8 @@ pub async fn get_prices(data: String, vec_assets: Vec<&str>, provider: String, v
 /// Function that will add at the end of the data the redstone specific data that we will craft
 /// It returns the data it got as input + extra, where extra is generated following redstone logic
 pub async fn get_packages(data: String, number_of_data_package: usize, order_of_assets: Vec<String>, data_feeds: Vec<String>) -> String {
-    let data_feeds_ids = if data_feeds.is_empty() { ["___ALL_FEEDS___".to_string()].to_vec() } else { data_feeds };
+
+    let data_feeds_ids = if data_feeds.is_empty() { ["___ALL_FEEDS___".to_string()].to_vec()} else {data_feeds};
 
     //ToDo Rename this
     let map_response_api = get_package("https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod".parse().unwrap()).await;
@@ -128,15 +126,7 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let b32_hex = b32.encode_hex();
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
         data += b32_hex_stripped;
-        let engine = engine::GeneralPurpose::new(&alphabet::URL_SAFE,
-            engine::general_purpose::NO_PAD,
-        );
-        let test = engine.encode(&value.to_be_bytes());
-        // let test = Engine::encode(&value.to_be_bytes(), Engine::);
-        let test = test.encode_hex();
-        let test = test.strip_prefix("0x").unwrap();
-        println!("TEST {}",test );
-        data += test;
+        data += value.to_be_bytes().encode_hex().strip_prefix("0x").unwrap();
     }
     let timestamp = price_data.timestamp as u64;
     // let tmstmp = Duration::from_secs(timestamp);
@@ -358,7 +348,7 @@ mod tests {
                 "YY_TJ_AVAX_sAVAX_LP".to_string(),
                 "sAVAX".to_string(),
             ].to_vec(),
-            ["___ALL_FEEDS___".to_string()].to_vec(),
+            ["___ALL_FEEDS___".to_string()].to_vec()
         ).await;
         println!("{:?}", result);
         assert_ne!(result, "");
