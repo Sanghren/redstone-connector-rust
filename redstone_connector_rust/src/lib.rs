@@ -45,7 +45,7 @@ pub async fn get_prices(data: String, vec_assets: Vec<&str>, provider: String, v
     serialized_data.timestamp = vec_response_api.get(0).unwrap().timestamp.unwrap();
     serialized_data.lite_sig = vec_response_api.get(0).unwrap().lite_evm_signature.clone().unwrap();
     for r in vec_response_api {
-        serialized_data.map_symbol_value.insert(r.symbol.unwrap(), r.value.unwrap());
+        serialized_data.map_symbol_value.insert(r.symbol.unwrap(), (r.value.unwrap() * 100000000.).round() as u64);
         // serialized_data.symbols.push(r.symbol.unwrap());
         // serialized_data.values.push((r.value.unwrap() * 100000000.).round() as u64);
     }
@@ -89,7 +89,7 @@ pub async fn get_packages(data: String, number_of_data_package: usize, order_of_
             println!("Key {}", asset);
             for data_point in &map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().dataPoints {
                 if asset.eq_ignore_ascii_case(&data_point.dataFeedId) {
-                    serialized_data.map_symbol_value.insert(asset.clone(), data_point.value);
+                    serialized_data.map_symbol_value.insert(asset.clone(), (data_point.value * 100000000.).round() as u64);
                 }
             }
             // for r in &map_response_api {
@@ -126,7 +126,7 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let b32_hex = b32.encode_hex();
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
         data += b32_hex_stripped;
-        data += value.to_be_bytes().encode_hex().strip_prefix("0x").unwrap();
+        data += value.encode_hex().strip_prefix("0x").unwrap();
     }
     let timestamp = price_data.timestamp as u64;
     // let tmstmp = Duration::from_secs(timestamp);
@@ -209,7 +209,7 @@ fn string_to_bytes32(s: &str) -> String {
 
 #[derive(Debug)]
 pub struct SerializedPriceData {
-    map_symbol_value: BTreeMap<String, f64>,
+    map_symbol_value: BTreeMap<String, u64>,
     timestamp: u64,
     lite_sig: String,
 }
