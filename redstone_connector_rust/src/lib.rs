@@ -130,17 +130,26 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
     // let tmstmp = Duration::from_secs(timestamp);
     println!("Timestamp : {:?}", timestamp);
     let timestamp_hex = format!("{:#04x}", timestamp);
+    println!("Timestamp : {:?}", timestamp_hex);
     let timestamp_hex_stripped = timestamp_hex.strip_prefix("0x").unwrap();
-
+    println!("Timestamp : {:?}", timestamp_hex_stripped);
+    data += "0";
     data += timestamp_hex_stripped;
 
-    let data_point_size_hex = format!("{:#04x}", 20);
+    let data_point_size_hex = format!("{:0>8x}", 32);
+    println!("data_point_size_hex : {:?}", data_point_size_hex);
+
     let data_point_size_hex = data_point_size_hex.strip_prefix("0x").unwrap();
+    println!("data_point_size_hex : {:?}", data_point_size_hex);
 
     data += data_point_size_hex;
 
-    let data_point_number_hex = format!("{:#04x}", 32);
+    // ToDo Automatic and not hardcoded
+    let data_point_number_hex = format!("{:0>6x}", 34);
+    println!("data_point_number_hex : {:?}", data_point_number_hex);
+
     let data_point_number_hex = data_point_number_hex.strip_prefix("0x").unwrap();
+    println!("data_point_number_hex : {:?}", data_point_number_hex);
 
     data += data_point_number_hex;
 
