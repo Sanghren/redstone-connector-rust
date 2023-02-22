@@ -170,7 +170,8 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
 }
 
 fn add_meta_data_bytes(data: &mut String) {
-    let package_number_hex = format!("{:#04x}", 1);
+    // ToDo Dynamic
+    let package_number_hex = format!("{:0>4x}", 3);
     let package_number_hex = package_number_hex.strip_prefix("0x").unwrap();
 
     *data += package_number_hex;
