@@ -12,7 +12,8 @@ use ethers::utils::__serde_json::to_vec;
 use ethers::utils::{format_bytes32_string, hex};
 use log::{debug, error, info, trace};
 use redstone_api::{get_package, get_price};
-
+use data_encoding::BASE64;
+use data_encoding::HEXLOWER;
 /// Function that will add at the end of the data the redstone specific data that we will craft
 /// It returns the data it got as input + extra, where extra is generated following redstone logic
 pub async fn get_prices(data: String, vec_assets: Vec<&str>, provider: String, vec_token_order: Vec<&str>) -> String {
@@ -82,7 +83,7 @@ pub async fn get_packages(data: String, number_of_data_package: usize, order_of_
 
         for asset in &order_of_assets {
             serialized_data.timestamp = map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().timestampMilliseconds as u64;
-            serialized_data.lite_sig = map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().signature.to_string();
+            serialized_data.lite_sig = map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().signature.clone();
 
             println!("Key {}", asset);
             for data_point in &map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().dataPoints {
@@ -148,11 +149,19 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
     data += data_point_number_hex.as_str();
 
     println!("{}", price_data.lite_sig.clone());
+    // Decode the Base64 string
     let lite_sig = price_data.lite_sig.clone();
-    let bytes32 = hex::encode(lite_sig.as_bytes());
+
+    let decoded = BASE64.decode(lite_sig.as_bytes()).unwrap();
+
+    // Encode the decoded bytes as a hexadecimal string
+    let hex_string = HEXLOWER.encode(&decoded);
+
+    println!("{}", hex_string);
+    // let bytes32 = hex::encode(lite_sig.as_bytes());
     // let lite_sig = format!("{:04x}", bytes32);
-    println!("{}", bytes32);
-    let lite_sig = bytes32.trim_start_matches("0x");
+    // println!("{}", bytes32);
+    let lite_sig = hex_string.trim_start_matches("0x");
 
     data += lite_sig;
 

@@ -10,7 +10,7 @@ ethers = { version = "0.17.0", features = ["abigen"]}
 ethers-contract = "0.17.0"
 ethers-solc = "0.17.0"
 ethers-providers = "0.17.0"
-
+data-encoding = "2.3.3"
 log = "0.4.16"
 
 reqwest = "0.11.7"
