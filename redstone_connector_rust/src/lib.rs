@@ -126,9 +126,9 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         data += b32_hex_stripped;
         data += value.encode_hex().strip_prefix("0x").unwrap();
     }
-    let timestamp = (price_data.timestamp as f64 / 1000.).ceil() as u64;
-    let tmstmp = Duration::from_secs(timestamp);
-    debug!("Timestamp : {:?}", tmstmp);
+    let timestamp = price_data.timestamp as u64;
+    // let tmstmp = Duration::from_secs(timestamp);
+    println!("Timestamp : {:?}", timestamp);
     let timestamp_hex = timestamp.encode_hex();
     let timestamp_hex_stripped = timestamp_hex.strip_prefix("0x").unwrap();
 
