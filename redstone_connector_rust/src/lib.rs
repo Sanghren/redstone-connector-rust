@@ -2,11 +2,14 @@
 //!
 //! Will provides functions to interact with Redstone's
 //! [`Redstone`]: https://redstone.finance/
+use base64::prelude::*;
 use rustc_hex::ToHex;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt;
 use std::fmt::Debug;
 use std::time::Duration;
+use base64::{alphabet, encode, engine};
+use base64::alphabet::Alphabet;
 use ethers::abi::AbiEncode;
 use ethers::utils::__serde_json::to_vec;
 use ethers::utils::{format_bytes32_string, hex};
@@ -14,6 +17,7 @@ use log::{debug, error, info, trace};
 use redstone_api::{get_package, get_price};
 use data_encoding::BASE64;
 use data_encoding::HEXLOWER;
+
 /// Function that will add at the end of the data the redstone specific data that we will craft
 /// It returns the data it got as input + extra, where extra is generated following redstone logic
 pub async fn get_prices(data: String, vec_assets: Vec<&str>, provider: String, vec_token_order: Vec<&str>) -> String {
@@ -44,7 +48,7 @@ pub async fn get_prices(data: String, vec_assets: Vec<&str>, provider: String, v
     serialized_data.timestamp = vec_response_api.get(0).unwrap().timestamp.unwrap();
     serialized_data.lite_sig = vec_response_api.get(0).unwrap().lite_evm_signature.clone().unwrap();
     for r in vec_response_api {
-        serialized_data.map_symbol_value.insert(r.symbol.unwrap(), (r.value.unwrap() * 100000000.).round() as u64);
+        serialized_data.map_symbol_value.insert(r.symbol.unwrap(), r.value.unwrap());
         // serialized_data.symbols.push(r.symbol.unwrap());
         // serialized_data.values.push((r.value.unwrap() * 100000000.).round() as u64);
     }
@@ -64,8 +68,7 @@ pub async fn get_prices(data: String, vec_assets: Vec<&str>, provider: String, v
 /// Function that will add at the end of the data the redstone specific data that we will craft
 /// It returns the data it got as input + extra, where extra is generated following redstone logic
 pub async fn get_packages(data: String, number_of_data_package: usize, order_of_assets: Vec<String>, data_feeds: Vec<String>) -> String {
-
-    let data_feeds_ids = if data_feeds.is_empty() { ["___ALL_FEEDS___".to_string()].to_vec()} else {data_feeds};
+    let data_feeds_ids = if data_feeds.is_empty() { ["___ALL_FEEDS___".to_string()].to_vec() } else { data_feeds };
 
     //ToDo Rename this
     let map_response_api = get_package("https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod".parse().unwrap()).await;
@@ -88,7 +91,7 @@ pub async fn get_packages(data: String, number_of_data_package: usize, order_of_
             println!("Key {}", asset);
             for data_point in &map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().dataPoints {
                 if asset.eq_ignore_ascii_case(&data_point.dataFeedId) {
-                    serialized_data.map_symbol_value.insert(asset.clone(), (data_point.value * 100000000.).round() as u64);
+                    serialized_data.map_symbol_value.insert(asset.clone(), data_point.value);
                 }
             }
             // for r in &map_response_api {
@@ -125,7 +128,13 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let b32_hex = b32.encode_hex();
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
         data += b32_hex_stripped;
-        data += value.encode_hex().strip_prefix("0x").unwrap();
+        let engine = engine::GeneralPurpose::new(&alphabet::URL_SAFE,
+            engine::general_purpose::PAD,
+        );
+        let test = engine.encode(&value.to_be_bytes());
+        // let test = Engine::encode(&value.to_be_bytes(), Engine::);
+        println!("TEST {}", test);
+        data += test.as_str();
     }
     let timestamp = price_data.timestamp as u64;
     // let tmstmp = Duration::from_secs(timestamp);
@@ -208,7 +217,7 @@ fn string_to_bytes32(s: &str) -> String {
 
 #[derive(Debug)]
 pub struct SerializedPriceData {
-    map_symbol_value: BTreeMap<String, u64>,
+    map_symbol_value: BTreeMap<String, f64>,
     timestamp: u64,
     lite_sig: String,
 }
@@ -347,7 +356,7 @@ mod tests {
                 "YY_TJ_AVAX_sAVAX_LP".to_string(),
                 "sAVAX".to_string(),
             ].to_vec(),
-            ["___ALL_FEEDS___".to_string()].to_vec()
+            ["___ALL_FEEDS___".to_string()].to_vec(),
         ).await;
         println!("{:?}", result);
         assert_ne!(result, "");
