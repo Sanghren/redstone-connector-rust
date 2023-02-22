@@ -129,7 +129,7 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
         data += b32_hex_stripped;
         let engine = engine::GeneralPurpose::new(&alphabet::URL_SAFE,
-            engine::general_purpose::PAD,
+            engine::general_purpose::NO_PAD,
         );
         let test = engine.encode(&value.to_be_bytes());
         // let test = Engine::encode(&value.to_be_bytes(), Engine::);
