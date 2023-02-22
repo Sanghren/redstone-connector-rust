@@ -139,19 +139,13 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
     let data_point_size_hex = format!("{:0>8x}", 32);
     println!("data_point_size_hex : {:?}", data_point_size_hex);
 
-    let data_point_size_hex = data_point_size_hex.strip_prefix("0x").unwrap();
-    println!("data_point_size_hex : {:?}", data_point_size_hex);
-
-    data += data_point_size_hex;
+    data += data_point_size_hex.as_str();
 
     // ToDo Automatic and not hardcoded
     let data_point_number_hex = format!("{:0>6x}", 34);
     println!("data_point_number_hex : {:?}", data_point_number_hex);
 
-    let data_point_number_hex = data_point_number_hex.strip_prefix("0x").unwrap();
-    println!("data_point_number_hex : {:?}", data_point_number_hex);
-
-    data += data_point_number_hex;
+    data += data_point_number_hex.as_str();
 
     println!("{}", price_data.lite_sig.clone());
     let lite_sig = price_data.lite_sig.clone();
