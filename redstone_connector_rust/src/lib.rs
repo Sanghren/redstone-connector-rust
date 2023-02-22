@@ -85,7 +85,11 @@ pub async fn get_packages(data: String, number_of_data_package: usize, order_of_
             serialized_data.lite_sig = map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().signature.to_string();
 
             println!("Key {}", asset);
-            serialized_data.map_symbol_value.insert(asset.clone(), (map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().dataPoints.get(0).unwrap().value * 100000000.).round() as u64);
+            for data_point in &map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().dataPoints {
+                if asset.eq_ignore_ascii_case(&data_point.dataFeedId) {
+                    serialized_data.map_symbol_value.insert(asset.clone(), (data_point.value * 100000000.).round() as u64);
+                }
+            }
             // for r in &map_response_api {
             //     serialized_data.map_symbol_value.insert(r.0.clone(), (r.1.get(i).unwrap().dataPoints.get(0).unwrap().value * 100000000.).round() as u64);
             //     // serialized_data.symbols.push(r.symbol.unwrap());
