@@ -133,9 +133,10 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         );
         let test = engine.encode(&value.to_be_bytes());
         // let test = Engine::encode(&value.to_be_bytes(), Engine::);
-        let test = test.encode_hex().strip_prefix("0x").unwrap();
+        let test = test.encode_hex();
+        let test = test.strip_prefix("0x").unwrap();
         println!("TEST {}",test );
-        data += test.as_str();
+        data += test;
     }
     let timestamp = price_data.timestamp as u64;
     // let tmstmp = Duration::from_secs(timestamp);
