@@ -45,10 +45,9 @@ pub async fn get_prices(data: String, vec_assets: Vec<&str>, provider: String, v
     serialized_data.timestamp = vec_response_api.get(0).unwrap().timestamp.unwrap();
     serialized_data.lite_sig = vec_response_api.get(0).unwrap().lite_evm_signature.clone().unwrap();
     for r in vec_response_api {
-        let fixed_decimal_num =  ((r.value.unwrap() * 100_000_000.0).round() / 100_000_000.0);
-        let formatted_num = format!("{:.1$}", fixed_decimal_num, fixed_decimal_num.to_string().len().saturating_sub(1).min(8));
-        println!("{}", formatted_num);
-        serialized_data.map_symbol_value.insert(r.symbol.unwrap(), formatted_num);        // serialized_data.symbols.push(r.symbol.unwrap());
+        let fixed_decimal_num = r.value.unwrap();
+        println!("{}", fixed_decimal_num);
+        serialized_data.map_symbol_value.insert(r.symbol.unwrap(), fixed_decimal_num);        // serialized_data.symbols.push(r.symbol.unwrap());
         // serialized_data.values.push((r.value.unwrap() * 100000000.).round() as u64);
     }
 
@@ -67,8 +66,7 @@ pub async fn get_prices(data: String, vec_assets: Vec<&str>, provider: String, v
 /// Function that will add at the end of the data the redstone specific data that we will craft
 /// It returns the data it got as input + extra, where extra is generated following redstone logic
 pub async fn get_packages(data: String, number_of_data_package: usize, order_of_assets: Vec<String>, data_feeds: Vec<String>) -> String {
-
-    let data_feeds_ids = if data_feeds.is_empty() { ["___ALL_FEEDS___".to_string()].to_vec()} else {data_feeds};
+    let data_feeds_ids = if data_feeds.is_empty() { ["___ALL_FEEDS___".to_string()].to_vec() } else { data_feeds };
 
     //ToDo Rename this
     let map_response_api = get_package("https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod".parse().unwrap()).await;
@@ -91,10 +89,9 @@ pub async fn get_packages(data: String, number_of_data_package: usize, order_of_
             println!("Key {}", asset);
             for data_point in &map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().dataPoints {
                 if asset.eq_ignore_ascii_case(&data_point.dataFeedId) {
-                    let fixed_decimal_num =  ((data_point.value * 100_000_000.0).round() / 100_000_000.0);
-                    let formatted_num = format!("{:.1$}", fixed_decimal_num, fixed_decimal_num.to_string().len().saturating_sub(1).min(8));
-                    println!("{} // {}", data_point.value, formatted_num);
-                    serialized_data.map_symbol_value.insert(asset.clone(), formatted_num);
+                    let fixed_decimal_num = data_point.value;
+                    println!("{} // {}", data_point.value, fixed_decimal_num);
+                    serialized_data.map_symbol_value.insert(asset.clone(), fixed_decimal_num);
                 }
             }
             // for r in &map_response_api {
@@ -131,7 +128,17 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let b32_hex = b32.encode_hex();
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
         data += b32_hex_stripped;
-        let hex_string = hex::encode(value.parse::<f64>().unwrap().to_string());
+
+        // let num = 17.99379920_f64;
+        let num = value;
+        let scaled_num = (num * 100000000_f64) as u64;
+        println!("scaled_num {}", scaled_num);
+        let bytes = scaled_num.to_be_bytes();
+        let hex_string = hex::encode(bytes);
+
+        println!("qqqqq {}", hex_string); // Prints "6b405bd0"
+
+        println!("hex_string : {}", hex_string);
         data += hex_string.as_str();
     }
     let timestamp = price_data.timestamp as u64;
@@ -215,7 +222,7 @@ fn string_to_bytes32(s: &str) -> String {
 
 #[derive(Debug)]
 pub struct SerializedPriceData {
-    map_symbol_value: BTreeMap<String, String>,
+    map_symbol_value: BTreeMap<String, f64>,
     timestamp: u64,
     lite_sig: String,
 }
@@ -354,7 +361,7 @@ mod tests {
                 "YY_TJ_AVAX_sAVAX_LP".to_string(),
                 "sAVAX".to_string(),
             ].to_vec(),
-            ["___ALL_FEEDS___".to_string()].to_vec()
+            ["___ALL_FEEDS___".to_string()].to_vec(),
         ).await;
         println!("{:?}", result);
         assert_ne!(result, "");
