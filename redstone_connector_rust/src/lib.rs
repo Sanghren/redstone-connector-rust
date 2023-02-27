@@ -131,7 +131,7 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
 
         // let num = 17.99379920_f64;
         let num = value;
-        let scaled_num = (num * 100000000_f64) as u64;
+        let scaled_num = (num * 100000000_f64).round() as u64;
         println!("scaled_num {}", scaled_num);
         let bytes = scaled_num.to_be_bytes();
         let hex_string = format!("{:0>64}", hex::encode(bytes));
