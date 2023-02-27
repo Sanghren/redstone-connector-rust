@@ -129,14 +129,14 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
         data += b32_hex_stripped;
 
-        // let num = 0.7658157839937463_f64;
-        let num = value;
-        let scaled_num = (num * 100000000_f64).floor() as u64;
+        let num = 402.8773957895131_f64;
+        // let num = value;
+        let scaled_num = (num * 100000000_f64).ceil() as u64;
         println!("scaled_num {}", scaled_num);
         let bytes = scaled_num.to_be_bytes();
         let hex_string = format!("{:0>64}", hex::encode(bytes));
 
-        println!("qqqqq {}", hex_string); // Prints "4908aca"
+        println!("qqqqq {}", hex_string); // Prints "6a10d884"
 
         println!("hex_string : {}", hex_string);
         data += hex_string.as_str();
