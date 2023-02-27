@@ -129,8 +129,8 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
         data += b32_hex_stripped;
 
-        let num = 402.8773957895131_f64;
-        // let num = value;
+        // let num = 402.8773957895131_f64;
+        let num = value;
         let scaled_num = (num * 100000000_f64).ceil() as u64;
         println!("scaled_num {}", scaled_num);
         let bytes = scaled_num.to_be_bytes();
