@@ -45,8 +45,8 @@ pub async fn get_prices(data: String, vec_assets: Vec<&str>, provider: String, v
     serialized_data.timestamp = vec_response_api.get(0).unwrap().timestamp.unwrap();
     serialized_data.lite_sig = vec_response_api.get(0).unwrap().lite_evm_signature.clone().unwrap();
     for r in vec_response_api {
-        let fixed_decimal_num =  ((r.value.unwrap() * 1_000_000.0).round() / 1_000_000.0);
-        let formatted_num = format!("{:.8}", fixed_decimal_num);
+        let fixed_decimal_num =  ((r.value.unwrap() * 100_000_000.0).round() / 100_000_000.0);
+        let formatted_num = format!("{:.1$}", fixed_decimal_num, fixed_decimal_num.to_string().len().saturating_sub(1).min(8));
         println!("{}", formatted_num);
         serialized_data.map_symbol_value.insert(r.symbol.unwrap(), formatted_num);        // serialized_data.symbols.push(r.symbol.unwrap());
         // serialized_data.values.push((r.value.unwrap() * 100000000.).round() as u64);
@@ -91,9 +91,9 @@ pub async fn get_packages(data: String, number_of_data_package: usize, order_of_
             println!("Key {}", asset);
             for data_point in &map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().dataPoints {
                 if asset.eq_ignore_ascii_case(&data_point.dataFeedId) {
-                    let fixed_decimal_num =  ((data_point.value * 1_000_000.0).round() / 1_000_000.0);
-                    let formatted_num = format!("{:.8}", fixed_decimal_num);
-                    println!("{}", formatted_num);
+                    let fixed_decimal_num =  ((data_point.value * 100_000_000.0).round() / 100_000_000.0);
+                    let formatted_num = format!("{:.1$}", fixed_decimal_num, fixed_decimal_num.to_string().len().saturating_sub(1).min(8));
+                    println!("{} // {}", data_point.value, formatted_num);
                     serialized_data.map_symbol_value.insert(asset.clone(), formatted_num);
                 }
             }
