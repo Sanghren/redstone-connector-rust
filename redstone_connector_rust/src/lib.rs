@@ -131,7 +131,7 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let b32_hex = b32.encode_hex();
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
         data += b32_hex_stripped;
-        let hex_string = u64::from((value.parse::<f64>().unwrap() * 1e6) as u64).to_string();
+        let hex_string = u64::from((value.parse::<f64>().unwrap()) as u64).to_string();
         data += hex_string.as_str();
     }
     let timestamp = price_data.timestamp as u64;
