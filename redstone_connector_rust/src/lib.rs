@@ -5,6 +5,7 @@
 use std::collections::{BTreeMap, HashMap};
 use std::fmt;
 use std::fmt::Debug;
+use std::str::FromStr;
 use std::time::Duration;
 use ethers::abi::AbiEncode;
 use ethers::utils::__serde_json::to_vec;
@@ -14,6 +15,8 @@ use redstone_api::{get_package, get_price};
 use data_encoding::BASE64;
 use data_encoding::HEXLOWER;
 use ethers::utils::hex::ToHex;
+use rust_decimal::Decimal;
+use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
 
 /// Function that will add at the end of the data the redstone specific data that we will craft
 /// It returns the data it got as input + extra, where extra is generated following redstone logic
@@ -129,29 +132,32 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
         data += b32_hex_stripped;
 
-        // let num = 17.794888999999998; // 6a10d884
-        let num = value;
+        // let num = Decimal::from_str(17.794888999999998.to_string().as_str()).unwrap();; // 6a10d884
+        let num = Decimal::from_str(value.to_string().as_str()).unwrap();
         // If 9th decimal is 5 then ...
-        let mut scaled_num = 0_u64;
-        let res = get_decimal_place(9,num.clone());
+        let mut scaled_num = 0_u128;
+        let res = get_decimal_place(9, num.clone());
         println!("Res {}", res);
         if res >= 5 {
-            scaled_num = (((num * 100000000_f64).ceil() / 100000000_f64) * 100000000_f64).round() as u64;
+            scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap()).ceil() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).round().to_u128().unwrap();
         } else {
-            scaled_num = (((num * 100000000_f64) / 100000000_f64) * 100000000_f64) as u64;
+            scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap()).floor() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).to_u128().unwrap();
         }
         // let scaled_num = (num * 100000000_f64.round()) as u64;
         // let scaled_num = scaled_num as f64;
         // let scaled_num = scaled_num / 100000000_f64;
         // let scaled_num = (scaled_num * 100000000_f64).round();
         // let scaled_num = scaled_num as u64;
-
+        // let big_deci = Decimal::from_str("133018818.04845291").unwrap();
         // let scaled_num = (((num * 100000000_f64).round() as u64 as f64 / 100000000_f64) * 100000000_f64) as u64;
-        println!("scaled_num 1 {}", scaled_num);
-        println!("scaled_num 2 {}", num * 100000000_f64);
-        println!("scaled_num 3 {}", (num * 100000000_f64).floor());
-        println!("scaled_num 4 {}", ((num * 100000000_f64).floor() / 100000000_f64));
-        println!("scaled_num 4 {}", (((num * 100000000_f64).floor() / 100000000_f64) * 100000000_f64).round() as u64);
+        // println!("scaled_num 1 {}", scaled_num);
+        // println!("big_deci 1 {}", big_deci);
+        // println!("scaled_num 2 {}", big_deci * BigDecimal::from_f64om_f64(100000000_f64).unwrap());
+        // let scaled_num_with_prec = (big_deci * Decimal::from_f64(100000000_f64).unwrap());
+        // println!("scaled_num 2a {}", scaled_num_with_prec);
+        // println!("scaled_num 3 {}", (num * Decimal::from_f64(100000000_f64).unwrap()).floor());
+        // println!("scaled_num 4 {}", ((num * Decimal::from_f64(100000000_f64).unwrap()).floor() / Decimal::from_f64(100000000_f64).unwrap()));
+        // println!("scaled_num 4 {}", (((num * Decimal::from_f64(100000000_f64).unwrap()).floor() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).round().to_u128().unwrap());
         let bytes = scaled_num.to_be_bytes();
         let hex_string = format!("{:0>64}", hex::encode(bytes));
 
@@ -222,13 +228,16 @@ fn add_meta_data_bytes(data: &mut String) {
     *data += "000002ed57011e0000";
 }
 
-fn get_decimal_place(x: u32, num: f64) -> u64 {
-    let power = 10u32.pow(x);
-    println!("Power {}", power);
-    let multiplied = (num * (power as f64)) as u64;
-    println!("multiplied {}", multiplied);
-    println!("multiplied {}", multiplied % 10);
-    multiplied % 10
+fn get_decimal_place(x: u32, num: Decimal) -> u64 {
+
+    // var result = value / (int)Math.Pow(10, position);
+    // result = result % 10;
+    // return result;
+
+    let shifted = num.to_f64().unwrap() * 10_f64.powi(x as i32);
+    println!("AAA {}", shifted);
+    let truncated = shifted % 10.0;
+    truncated as u64
 }
 
 fn string_to_bytes32(s: &str) -> String {
