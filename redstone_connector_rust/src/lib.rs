@@ -133,7 +133,7 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let num = value;
         // If 9th decimal is 5 then ...
         let mut scaled_num = 0_u64;
-        let res = get_decimal_place(9,num);
+        let res = get_decimal_place(9,num.clone());
         println!("Res {}", res);
         if res == 5 {
             scaled_num = (((num * 100000000_f64).round() / 100000000_f64) * 100000000_f64).round() as u64;
