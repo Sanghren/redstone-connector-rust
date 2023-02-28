@@ -129,16 +129,16 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
         data += b32_hex_stripped;
 
-        // let num = 17.401089935; // 6a10d884
+        // let num = 17.794888999999998; // 6a10d884
         let num = value;
         // If 9th decimal is 5 then ...
         let mut scaled_num = 0_u64;
         let res = get_decimal_place(9,num.clone());
         println!("Res {}", res);
-        if res == 5 {
-            scaled_num = (((num * 100000000_f64).round() / 100000000_f64) * 100000000_f64).round() as u64;
+        if res >= 5 {
+            scaled_num = (((num * 100000000_f64).ceil() / 100000000_f64) * 100000000_f64).round() as u64;
         } else {
-            scaled_num = (((num * 100000000_f64).floor() / 100000000_f64) * 100000000_f64).round() as u64;
+            scaled_num = (((num * 100000000_f64) / 100000000_f64) * 100000000_f64) as u64;
         }
         // let scaled_num = (num * 100000000_f64.round()) as u64;
         // let scaled_num = scaled_num as f64;
