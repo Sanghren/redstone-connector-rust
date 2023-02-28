@@ -129,9 +129,17 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
         data += b32_hex_stripped;
 
-        // let num = 17.857393000000002; // 6a10d884
-        let num = value;
-        let scaled_num = (((num * 100000000_f64).floor() / 100000000_f64) * 100000000_f64).round() as u64;
+        let num = 17.401089935; // 6a10d884
+        // let num = value;
+        // If 9th decimal is 5 then ...
+        let mut scaled_num = 0_u64;
+        let res = get_decimal_place(9,num);
+        println!("Res {}", res);
+        if res == 5 {
+            scaled_num = (((num * 100000000_f64).round() / 100000000_f64) * 100000000_f64).round() as u64;
+        } else {
+            scaled_num = (((num * 100000000_f64).floor() / 100000000_f64) * 100000000_f64).round() as u64;
+        }
         // let scaled_num = (num * 100000000_f64.round()) as u64;
         // let scaled_num = scaled_num as f64;
         // let scaled_num = scaled_num / 100000000_f64;
@@ -141,7 +149,7 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         // let scaled_num = (((num * 100000000_f64).round() as u64 as f64 / 100000000_f64) * 100000000_f64) as u64;
         println!("scaled_num 1 {}", scaled_num);
         println!("scaled_num 2 {}", num * 100000000_f64);
-        println!("scaled_num 3 {}", (num * 100000000_f64).round());
+        println!("scaled_num 3 {}", (num * 100000000_f64).floor());
         println!("scaled_num 4 {}", ((num * 100000000_f64).floor() / 100000000_f64));
         println!("scaled_num 4 {}", (((num * 100000000_f64).floor() / 100000000_f64) * 100000000_f64).round() as u64);
         let bytes = scaled_num.to_be_bytes();
@@ -212,6 +220,15 @@ fn add_meta_data_bytes(data: &mut String) {
     *data += metadata_size_hex;
 
     *data += "000002ed57011e0000";
+}
+
+fn get_decimal_place(x: u32, num: f64) -> u64 {
+    let power = 10u32.pow(x);
+    println!("Power {}", power);
+    let multiplied = (num * (power as f64)) as u64;
+    println!("multiplied {}", multiplied);
+    println!("multiplied {}", multiplied % 10);
+    multiplied % 10
 }
 
 fn string_to_bytes32(s: &str) -> String {
