@@ -89,7 +89,7 @@ pub async fn get_packages(data: String, number_of_data_package: usize, order_of_
             serialized_data.timestamp = map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().timestampMilliseconds as u64;
             serialized_data.lite_sig = map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().signature.clone();
 
-            println!("Key {}", asset);
+            // println!("Key {}", asset);
             for data_point in &map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().dataPoints {
                 if asset.eq_ignore_ascii_case(&data_point.dataFeedId) {
                     let fixed_decimal_num = data_point.value;
