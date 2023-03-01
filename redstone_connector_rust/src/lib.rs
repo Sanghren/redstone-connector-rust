@@ -132,9 +132,9 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
         data += b32_hex_stripped;
 
-        let num = Decimal::from_str(131565122.2156839.to_string().as_str()).unwrap();; // 6a10d884
+        // let num = Decimal::from_str(131565122.2156839.to_string().as_str()).unwrap();; // 6a10d884
         // println!("RAW {} // STRING {}", value, value.to_string().as_str());
-        // let num = Decimal::from_str(value.to_string().as_str()).unwrap();
+        let num = Decimal::from_str(value.to_string().as_str()).unwrap();
         // If 9th decimal is 5 then ...
         let mut scaled_num = 0_u128;
         let res = get_decimal_place(9, num.clone());
