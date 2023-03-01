@@ -93,7 +93,7 @@ pub async fn get_packages(data: String, number_of_data_package: usize, order_of_
             for data_point in &map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().dataPoints {
                 if asset.eq_ignore_ascii_case(&data_point.dataFeedId) {
                     let fixed_decimal_num = data_point.value;
-                    println!("{} // {}", data_point.value, fixed_decimal_num);
+                    // println!("{} // {}", data_point.value, fixed_decimal_num);
                     serialized_data.map_symbol_value.insert(asset.clone(), fixed_decimal_num);
                 }
             }
@@ -132,12 +132,13 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
         data += b32_hex_stripped;
 
-        // let num = Decimal::from_str(17.794888999999998.to_string().as_str()).unwrap();; // 6a10d884
-        let num = Decimal::from_str(value.to_string().as_str()).unwrap();
+        let num = Decimal::from_str(131565122.2156839.to_string().as_str()).unwrap();; // 6a10d884
+        // println!("RAW {} // STRING {}", value, value.to_string().as_str());
+        // let num = Decimal::from_str(value.to_string().as_str()).unwrap();
         // If 9th decimal is 5 then ...
         let mut scaled_num = 0_u128;
         let res = get_decimal_place(9, num.clone());
-        println!("Res {}", res);
+        // println!("Res {}", res);
         if res >= 5 {
             scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap()).ceil() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).round().to_u128().unwrap();
         } else {
@@ -161,33 +162,33 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let bytes = scaled_num.to_be_bytes();
         let hex_string = format!("{:0>64}", hex::encode(bytes));
 
-        println!("qqqqq {}", hex_string); // Prints "6a10d884"
+        // println!("qqqqq {}", hex_string); // Prints "6a10d884"
 
-        println!("hex_string : {}", hex_string);
+        // println!("hex_string : {}", hex_string);
         data += hex_string.as_str();
     }
     let timestamp = price_data.timestamp as u64;
     // let tmstmp = Duration::from_secs(timestamp);
-    println!("Timestamp : {:?}", timestamp);
+    // println!("Timestamp : {:?}", timestamp);
     let timestamp_hex = format!("{:#04x}", timestamp);
-    println!("Timestamp : {:?}", timestamp_hex);
+    // println!("Timestamp : {:?}", timestamp_hex);
     let timestamp_hex_stripped = timestamp_hex.strip_prefix("0x").unwrap();
-    println!("Timestamp : {:?}", timestamp_hex_stripped);
+    // println!("Timestamp : {:?}", timestamp_hex_stripped);
     data += "0";
     data += timestamp_hex_stripped;
 
     let data_point_size_hex = format!("{:0>8x}", 32);
-    println!("data_point_size_hex : {:?}", data_point_size_hex);
+    // println!("data_point_size_hex : {:?}", data_point_size_hex);
 
     data += data_point_size_hex.as_str();
 
     // ToDo Automatic and not hardcoded
     let data_point_number_hex = format!("{:0>6x}", 34);
-    println!("data_point_number_hex : {:?}", data_point_number_hex);
+    // println!("data_point_number_hex : {:?}", data_point_number_hex);
 
     data += data_point_number_hex.as_str();
 
-    println!("{}", price_data.lite_sig.clone());
+    // println!("{}", price_data.lite_sig.clone());
     // Decode the Base64 string
     let lite_sig = price_data.lite_sig.clone();
 
@@ -196,7 +197,7 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
     // Encode the decoded bytes as a hexadecimal string
     let hex_string = HEXLOWER.encode(&decoded);
 
-    println!("{}", hex_string);
+    // println!("{}", hex_string);
     // let bytes32 = hex::encode(lite_sig.as_bytes());
     // let lite_sig = format!("{:04x}", bytes32);
     // println!("{}", bytes32);
@@ -235,7 +236,7 @@ fn get_decimal_place(x: u32, num: Decimal) -> u64 {
     // return result;
 
     let shifted = num.to_f64().unwrap() * 10_f64.powi(x as i32);
-    println!("AAA {}", shifted);
+    // println!("AAA {}", shifted);
     let truncated = shifted % 10.0;
     truncated as u64
 }

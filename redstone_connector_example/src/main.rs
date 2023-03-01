@@ -79,7 +79,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut data = String::from("da93d0d1");
     data = get_prices(data, [].to_vec(), "redstone-avalanche-prod-1".to_string()).await;
 
-    println!("After appending vanilla and generated data -- {:?}", data);
+    // println!("After appending vanilla and generated data -- {:?}", data);
 
     let res = instance.get_last_price().call().await?;
     debug!("GET LAST PRICE BEOFRE SETTING IT {:?}", res);
