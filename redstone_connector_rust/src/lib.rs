@@ -188,7 +188,7 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
 
     data += data_point_number_hex.as_str();
 
-    // println!("{}", price_data.lite_sig.clone());
+    println!("{}", price_data.lite_sig.clone());
     // Decode the Base64 string
     let lite_sig = price_data.lite_sig.clone();
 
@@ -197,7 +197,7 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
     // Encode the decoded bytes as a hexadecimal string
     let hex_string = HEXLOWER.encode(&decoded);
 
-    // println!("{}", hex_string);
+    println!("{}", hex_string);
     // let bytes32 = hex::encode(lite_sig.as_bytes());
     // let lite_sig = format!("{:04x}", bytes32);
     // println!("{}", bytes32);
