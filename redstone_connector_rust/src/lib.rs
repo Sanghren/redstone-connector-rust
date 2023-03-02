@@ -68,57 +68,61 @@ pub async fn get_prices(data: String, vec_assets: Vec<&str>, provider: String, v
 
 /// Function that will add at the end of the data the redstone specific data that we will craft
 /// It returns the data it got as input + extra, where extra is generated following redstone logic
-pub async fn get_packages(data: String, number_of_data_package: usize, order_of_assets: Vec<String>, data_feeds: Vec<String>) -> String {
+pub async fn get_packages(base_call_data_vec: Vec<String>, number_of_data_package: usize, order_of_assets: Vec<String>, data_feeds: Vec<String>) -> Vec<String> {
     let data_feeds_ids = if data_feeds.is_empty() { ["___ALL_FEEDS___".to_string()].to_vec() } else { data_feeds };
 
     //ToDo Rename this
     let map_response_api = get_package("https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod".parse().unwrap()).await;
-
+    let mut redstone_call_data = Vec::new();
     let mut i = 0_usize;
-    let mut new_data = data;
 
-    // order of assets ....
-    while i < number_of_data_package {
-        let mut serialized_data = SerializedPriceData {
-            map_symbol_value: BTreeMap::new(),
-            timestamp: 0,
-            lite_sig: String::new(),
-        };
+    for base_call_data in base_call_data_vec {
+        let mut new_data = base_call_data;
 
-        for asset in &order_of_assets {
-            serialized_data.timestamp = map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().timestampMilliseconds as u64;
-            serialized_data.lite_sig = map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().signature.clone();
+        // order of assets ....
+        while i < number_of_data_package {
+            let mut serialized_data = SerializedPriceData {
+                map_symbol_value: BTreeMap::new(),
+                timestamp: 0,
+                lite_sig: String::new(),
+            };
 
-            // println!("Key {}", asset);
-            for data_point in &map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().dataPoints {
-                if asset.eq_ignore_ascii_case(&data_point.dataFeedId) {
-                    let fixed_decimal_num = data_point.value;
-                    // println!("{} // {}", data_point.value, fixed_decimal_num);
-                    serialized_data.map_symbol_value.insert(asset.clone(), fixed_decimal_num);
+            for asset in &order_of_assets {
+                serialized_data.timestamp = map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().timestampMilliseconds as u64;
+                serialized_data.lite_sig = map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().signature.clone();
+
+                // println!("Key {}", asset);
+                for data_point in &map_response_api.get("___ALL_FEEDS___").unwrap().get(i).unwrap().dataPoints {
+                    if asset.eq_ignore_ascii_case(&data_point.dataFeedId) {
+                        let fixed_decimal_num = data_point.value;
+                        // println!("{} // {}", data_point.value, fixed_decimal_num);
+                        serialized_data.map_symbol_value.insert(asset.clone(), fixed_decimal_num);
+                    }
                 }
+                // for r in &map_response_api {
+                //     serialized_data.map_symbol_value.insert(r.0.clone(), (r.1.get(i).unwrap().dataPoints.get(0).unwrap().value * 100000000.).round() as u64);
+                //     // serialized_data.symbols.push(r.symbol.unwrap());
+                //     // serialized_data.values.push((r.value.unwrap() as u128 * 100000000.).round() as u64);
+                // }
+                // ToDo It must work for an array with more than 1 asset
+                // serialized_data.symbols.push(vec_response_api.get(0).unwrap().symbol.clone().unwrap());
+                // let value = (vec_response_api.get(0).unwrap().value.unwrap() * 100000000.) as u64;
+                // serialized_data.values.push(value);
             }
-            // for r in &map_response_api {
-            //     serialized_data.map_symbol_value.insert(r.0.clone(), (r.1.get(i).unwrap().dataPoints.get(0).unwrap().value * 100000000.).round() as u64);
-            //     // serialized_data.symbols.push(r.symbol.unwrap());
-            //     // serialized_data.values.push((r.value.unwrap() as u128 * 100000000.).round() as u64);
-            // }
-            // ToDo It must work for an array with more than 1 asset
-            // serialized_data.symbols.push(vec_response_api.get(0).unwrap().symbol.clone().unwrap());
-            // let value = (vec_response_api.get(0).unwrap().value.unwrap() * 100000000.) as u64;
-            // serialized_data.values.push(value);
+            let data_to_append = get_lite_data_bytes_string(serialized_data);
+            new_data += &*data_to_append;
+            i += 1;
         }
-        let data_to_append = get_lite_data_bytes_string(serialized_data);
-        new_data += &*data_to_append;
-        i += 1;
+        // append the result of the above line to input data
+
+        add_meta_data_bytes(&mut new_data);
+        redstone_call_data.push(new_data.clone());
     }
 
 
-    // append the result of the above line to input data
-
-    add_meta_data_bytes(&mut new_data);
 
     // return the whole things
-    new_data
+    redstone_call_data
 }
 
 pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
@@ -360,8 +364,10 @@ mod tests {
 
     #[tokio::test]
     async fn it_works_for_a_package() {
+        let mut vec = Vec::new();
+        vec.push("".to_string());
         let result = get_packages(
-            "".parse().unwrap(),
+            vec,
             3,
             [
                 "AVAX".to_string(),
@@ -402,6 +408,56 @@ mod tests {
             ["___ALL_FEEDS___".to_string()].to_vec(),
         ).await;
         println!("{:?}", result);
-        assert_ne!(result, "");
+        assert_ne!(result.get(0).unwrap(), "");
+    }
+
+    #[tokio::test]
+    async fn it_works_for_a_package_multiple_call_data() {
+        let mut vec = Vec::new();
+        vec.push("".to_string());
+        vec.push("".to_string());
+        let result = get_packages(
+            vec,
+            3,
+            [
+                "AVAX".to_string(),
+                "BTC".to_string(),
+                "BUSD".to_string(),
+                "ETH".to_string(),
+                "GLP".to_string(),
+                "GMX".to_string(),
+                "JOE".to_string(),
+                "LINK".to_string(),
+                "MOO_TJ_AVAX_USDC_LP".to_string(),
+                "PNG".to_string(),
+                "PNG_AVAX_ETH_LP".to_string(),
+                "PNG_AVAX_USDC_LP".to_string(),
+                "PNG_AVAX_USDT_LP".to_string(),
+                "PTP".to_string(),
+                "QI".to_string(),
+                "TJ_AVAX_BTC_LP".to_string(),
+                "TJ_AVAX_ETH_LP".to_string(),
+                "TJ_AVAX_USDC_LP".to_string(),
+                "TJ_AVAX_USDT_LP".to_string(),
+                "TJ_AVAX_sAVAX_LP".to_string(),
+                "USDC".to_string(),
+                "USDT".to_string(),
+                "XAVA".to_string(),
+                "YAK".to_string(),
+                "YYAV3SA1".to_string(),
+                "YY_AAVE_AVAX".to_string(),
+                "YY_GLP".to_string(),
+                "YY_PNG_AVAX_ETH_LP".to_string(),
+                "YY_PNG_AVAX_USDC_LP".to_string(),
+                "YY_PTP_sAVAX".to_string(),
+                "YY_TJ_AVAX_ETH_LP".to_string(),
+                "YY_TJ_AVAX_USDC_LP".to_string(),
+                "YY_TJ_AVAX_sAVAX_LP".to_string(),
+                "sAVAX".to_string(),
+            ].to_vec(),
+            ["___ALL_FEEDS___".to_string()].to_vec(),
+        ).await;
+        println!("{:?}", result);
+        assert_eq!(result.len(), 2);
     }
 }
