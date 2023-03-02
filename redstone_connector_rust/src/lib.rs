@@ -74,11 +74,10 @@ pub async fn get_packages(base_call_data_vec: Vec<String>, number_of_data_packag
     //ToDo Rename this
     let map_response_api = get_package("https://oracle-gateway-2.a.redstone.finance/data-packages/latest/redstone-avalanche-prod".parse().unwrap()).await;
     let mut redstone_call_data = Vec::new();
-    let mut i = 0_usize;
 
     for base_call_data in base_call_data_vec {
         let mut new_data = base_call_data;
-
+        let mut i = 0_usize;
         // order of assets ....
         while i < number_of_data_package {
             let mut serialized_data = SerializedPriceData {
