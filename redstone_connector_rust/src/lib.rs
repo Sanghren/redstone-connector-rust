@@ -5,6 +5,7 @@
 use std::collections::{BTreeMap, HashMap};
 use std::fmt;
 use std::fmt::Debug;
+use std::ops::Mul;
 use std::str::FromStr;
 use std::time::Duration;
 use ethers::abi::AbiEncode;
@@ -16,7 +17,7 @@ use data_encoding::BASE64;
 use data_encoding::HEXLOWER;
 use ethers::utils::hex::ToHex;
 use rust_decimal::Decimal;
-use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
+use rust_decimal::prelude::{FromPrimitive, One, ToPrimitive};
 
 /// Function that will add at the end of the data the redstone specific data that we will craft
 /// It returns the data it got as input + extra, where extra is generated following redstone logic
@@ -119,7 +120,6 @@ pub async fn get_packages(base_call_data_vec: Vec<String>, number_of_data_packag
     }
 
 
-
     // return the whole things
     redstone_call_data
 }
@@ -135,15 +135,24 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
         data += b32_hex_stripped;
 
-        // let num = Decimal::from_str(131565122.2156839.to_string().as_str()).unwrap();; // 6a10d884
+        let num = Decimal::from_str(119635088.05266081.to_string().as_str()).unwrap();
+        ; // 6a10d884
         // println!("RAW {} // STRING {}", value, value.to_string().as_str());
-        let num = Decimal::from_str(value.to_string().as_str()).unwrap();
+        // let num = Decimal::from_str(value.to_string().as_str()).unwrap();
         // If 9th decimal is 5 then ...
         let mut scaled_num = 0_u128;
         let res = get_decimal_place(9, num.clone());
-        // println!("Res {}", res);
+        println!("Final number i ndecimal is {}", res);
         if res >= 5 {
             scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap()).ceil() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).round().to_u128().unwrap();
+        } else if res == 0 {
+            let res = get_decimal_place(8, num.clone());
+            println!("Final number i ndecimal is {}", res);
+            if res == 1 {
+                scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap() - Decimal::one()).floor() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).to_u128().unwrap();
+            } else {
+                scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap()).floor() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).to_u128().unwrap();
+            }
         } else {
             scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap()).floor() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).to_u128().unwrap();
         }
@@ -165,7 +174,7 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let bytes = scaled_num.to_be_bytes();
         let hex_string = format!("{:0>64}", hex::encode(bytes));
 
-        // println!("qqqqq {}", hex_string); // Prints "6a10d884"
+        println!("qqqqq {}", hex_string); // Prints "6a10d884"
 
         // println!("hex_string : {}", hex_string);
         data += hex_string.as_str();
@@ -237,11 +246,13 @@ fn get_decimal_place(x: u32, num: Decimal) -> u64 {
     // var result = value / (int)Math.Pow(10, position);
     // result = result % 10;
     // return result;
+    println!("AAA {}", num);
 
-    let shifted = num.to_f64().unwrap() * 10_f64.powi(x as i32);
-    // println!("AAA {}", shifted);
-    let truncated = shifted % 10.0;
-    truncated as u64
+    let shifted = num.mul(Decimal::from_f64(10_f64.powi(x as i32)).unwrap());
+    println!("AAA {}", shifted);
+    println!("AAA {}", shifted.to_f64().unwrap());
+    let truncated = shifted % Decimal::from_f64(10.0).unwrap();
+    truncated.to_u64().unwrap()
 }
 
 fn string_to_bytes32(s: &str) -> String {
