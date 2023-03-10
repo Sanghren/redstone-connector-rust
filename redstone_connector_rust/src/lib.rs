@@ -135,54 +135,11 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
         data += b32_hex_stripped;
 
-        // let num = Decimal::from_str(10497155.290772103.to_string().as_str()).unwrap();
+        // let num = Decimal::from_str(110462390.9453476.to_string().as_str()).unwrap();
         ; // 6a10d884
         println!("RAW {} // STRING {}", symbol, value.to_string().as_str());
-        let num = Decimal::from_str(value.to_string().as_str()).unwrap();
-        // If 9th decimal is 5 then ...
-        let mut scaled_num = 0_u128;
-        let res = get_decimal_place(9, num.clone());
-        println!("Final number 9 in decimal is {}", res);
-        if res >= 5 {
-            scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap()).ceil() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).round().to_u128().unwrap();
-        } else if res == 0 {
-            let res = get_decimal_place(8, num.clone());
-            println!("Final number 8 in decimal is {}", res);
-            if res == 1 {
-                scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap()).floor() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).to_u128().unwrap();
-            } else if res == 0 {
-                let res = get_decimal_place(7, num.clone());
-                println!("Final number 7 in decimal is {}", res);
-                if res == 9 {
-                    scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap() + Decimal::one()).floor() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).to_u128().unwrap();
-                } else {
-                    scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap()).floor() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).to_u128().unwrap();
-                }
-            } else {
-                scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap()).floor() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).to_u128().unwrap();
-            }
-        } else {
-            scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap()).floor() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).to_u128().unwrap();
-        }
-        // let scaled_num = (num * 100000000_f64.round()) as u64;
-        // let scaled_num = scaled_num as f64;
-        // let scaled_num = scaled_num / 100000000_f64;
-        // let scaled_num = (scaled_num * 100000000_f64).round();
-        // let scaled_num = scaled_num as u64;
-        // let big_deci = Decimal::from_str("133018818.04845291").unwrap();
-        // let scaled_num = (((num * 100000000_f64).round() as u64 as f64 / 100000000_f64) * 100000000_f64) as u64;
-        // println!("scaled_num 1 {}", scaled_num);
-        // println!("big_deci 1 {}", big_deci);
-        // println!("scaled_num 2 {}", big_deci * BigDecimal::from_f64om_f64(100000000_f64).unwrap());
-        // let scaled_num_with_prec = (big_deci * Decimal::from_f64(100000000_f64).unwrap());
-        // println!("scaled_num 2a {}", scaled_num_with_prec);
-        // println!("scaled_num 3 {}", (num * Decimal::from_f64(100000000_f64).unwrap()).floor());
-        // println!("scaled_num 4 {}", ((num * Decimal::from_f64(100000000_f64).unwrap()).floor() / Decimal::from_f64(100000000_f64).unwrap()));
-        // println!("scaled_num 4 {}", (((num * Decimal::from_f64(100000000_f64).unwrap()).floor() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).round().to_u128().unwrap());
-        let bytes = scaled_num.to_be_bytes();
-        let hex_string = format!("{:0>64}", hex::encode(bytes));
-
-        println!("qqqqq {}", hex_string); // Prints "6a10d884"
+        let hex_string = generate_price_data(value);
+        // Prints "6a10d884"
 
         // println!("hex_string : {}", hex_string);
         data += hex_string.as_str();
@@ -227,6 +184,55 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
 
 
     data
+}
+
+fn generate_price_data(value: &f64) -> String {
+    let num = Decimal::from_str(value.to_string().as_str()).unwrap();
+    // If 9th decimal is 5 then ...
+    let mut scaled_num = 0_u128;
+    let res = get_decimal_place(9, num.clone());
+    println!("Final number 9 in decimal is {}", res);
+    if res >= 5 {
+        scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap()).ceil() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).round().to_u128().unwrap();
+    } else if res == 0 {
+        let res = get_decimal_place(8, num.clone());
+        println!("Final number 8 in decimal is {}", res);
+        if res == 1 {
+            scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap()).floor() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).to_u128().unwrap();
+        } else if res == 0 {
+            let res = get_decimal_place(7, num.clone());
+            println!("Final number 7 in decimal is {}", res);
+            if res >= 5 {
+                scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap() + Decimal::one()).floor() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).to_u128().unwrap();
+            } else {
+                scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap()).floor() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).to_u128().unwrap();
+            }
+        } else {
+            scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap()).floor() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).to_u128().unwrap();
+        }
+    } else {
+        scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap()).floor() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).to_u128().unwrap();
+    }
+    // let scaled_num = (num * 100000000_f64.round()) as u64;
+    // let scaled_num = scaled_num as f64;
+    // let scaled_num = scaled_num / 100000000_f64;
+    // let scaled_num = (scaled_num * 100000000_f64).round();
+    // let scaled_num = scaled_num as u64;
+    // let big_deci = Decimal::from_str("133018818.04845291").unwrap();
+    // let scaled_num = (((num * 100000000_f64).round() as u64 as f64 / 100000000_f64) * 100000000_f64) as u64;
+    // println!("scaled_num 1 {}", scaled_num);
+    // println!("big_deci 1 {}", big_deci);
+    // println!("scaled_num 2 {}", big_deci * BigDecimal::from_f64om_f64(100000000_f64).unwrap());
+    // let scaled_num_with_prec = (big_deci * Decimal::from_f64(100000000_f64).unwrap());
+    // println!("scaled_num 2a {}", scaled_num_with_prec);
+    // println!("scaled_num 3 {}", (num * Decimal::from_f64(100000000_f64).unwrap()).floor());
+    // println!("scaled_num 4 {}", ((num * Decimal::from_f64(100000000_f64).unwrap()).floor() / Decimal::from_f64(100000000_f64).unwrap()));
+    // println!("scaled_num 4 {}", (((num * Decimal::from_f64(100000000_f64).unwrap()).floor() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).round().to_u128().unwrap());
+    let bytes = scaled_num.to_be_bytes();
+    let hex_string = format!("{:0>64}", hex::encode(bytes));
+
+    println!("qqqqq {}", hex_string); // Prints "6a10d884"
+    hex_string
 }
 
 fn add_meta_data_bytes(data: &mut String) {
@@ -292,191 +298,354 @@ pub struct SerializedPriceData {
 mod tests {
     use super::*;
 
+    // #[tokio::test]
+    // async fn it_works_for_one_asset() {
+    //     let result = get_prices("".parse().unwrap(), ["AVAX"].to_vec(), "redstone-avalanche-prod-1".to_string(), [
+    //         "AVAX",
+    //         "BTC",
+    //         "ETH",
+    //         "FRAX",
+    //         "LINK",
+    //         "MOO_TJ_AVAX_USDC_LP",
+    //         "PNG",
+    //         "PNG_AVAX_USDC_LP",
+    //         "QI",
+    //         "SAV2",
+    //         "TJ_AVAX_USDC_LP",
+    //         "USDC",
+    //         "USDT",
+    //         "XAVA",
+    //         "YAK",
+    //         "YYAV3SA1",
+    //         "YY_TJ_AVAX_USDC_LP",
+    //         "sAVAX",
+    //     ].to_vec()).await;
+    //     assert_ne!(result, "");
+    // }
+    //
+    // #[tokio::test]
+    // async fn it_works_for_two_assets() {
+    //     let result = get_prices("".parse().unwrap(), ["AVAX", "ETH"].to_vec(), "redstone-avalanche-prod-1".to_string(), [
+    //         "AVAX",
+    //         "BTC",
+    //         "ETH",
+    //         "FRAX",
+    //         "LINK",
+    //         "MOO_TJ_AVAX_USDC_LP",
+    //         "PNG",
+    //         "PNG_AVAX_USDC_LP",
+    //         "QI",
+    //         "SAV2",
+    //         "TJ_AVAX_USDC_LP",
+    //         "USDC",
+    //         "USDT",
+    //         "XAVA",
+    //         "YAK",
+    //         "YYAV3SA1",
+    //         "YY_TJ_AVAX_USDC_LP",
+    //         "sAVAX",
+    //     ].to_vec()).await;
+    //     println!("{:?}", result);
+    //     assert_ne!(result, "");
+    // }
+    //
+    // #[tokio::test]
+    // async fn it_works_for_ten_assets() {
+    //     let result = get_prices("".parse().unwrap(), [
+    //         "AVAX",
+    //         "ETH",
+    //         "BTC",
+    //         "USDT",
+    //         "PNG",
+    //         "XAVA",
+    //         "LINK",
+    //         "YAK",
+    //         "QI",
+    //         "USDC",
+    //     ].to_vec(), "redstone-avalanche-prod-1".to_string(),
+    //                             [
+    //                                 "AVAX",
+    //                                 "BTC",
+    //                                 "ETH",
+    //                                 "FRAX",
+    //                                 "LINK",
+    //                                 "MOO_TJ_AVAX_USDC_LP",
+    //                                 "PNG",
+    //                                 "PNG_AVAX_USDC_LP",
+    //                                 "QI",
+    //                                 "SAV2",
+    //                                 "TJ_AVAX_USDC_LP",
+    //                                 "USDC",
+    //                                 "USDT",
+    //                                 "XAVA",
+    //                                 "YAK",
+    //                                 "YYAV3SA1",
+    //                                 "YY_TJ_AVAX_USDC_LP",
+    //                                 "sAVAX",
+    //                             ].to_vec()).await;
+    //     println!("{:?}", result);
+    //     assert_ne!(result, "");
+    // }
+    //
+    // #[tokio::test]
+    // async fn it_works_for_a_package() {
+    //     let mut vec = Vec::new();
+    //     vec.push("".to_string());
+    //     let result = get_packages(
+    //         vec,
+    //         3,
+    //         [
+    //             "AVAX".to_string(),
+    //             "BTC".to_string(),
+    //             "BUSD".to_string(),
+    //             "ETH".to_string(),
+    //             "GLP".to_string(),
+    //             "GMX".to_string(),
+    //             "JOE".to_string(),
+    //             "LINK".to_string(),
+    //             "MOO_TJ_AVAX_USDC_LP".to_string(),
+    //             "PNG".to_string(),
+    //             "PNG_AVAX_ETH_LP".to_string(),
+    //             "PNG_AVAX_USDC_LP".to_string(),
+    //             "PNG_AVAX_USDT_LP".to_string(),
+    //             "PTP".to_string(),
+    //             "QI".to_string(),
+    //             "TJ_AVAX_BTC_LP".to_string(),
+    //             "TJ_AVAX_ETH_LP".to_string(),
+    //             "TJ_AVAX_USDC_LP".to_string(),
+    //             "TJ_AVAX_USDT_LP".to_string(),
+    //             "TJ_AVAX_sAVAX_LP".to_string(),
+    //             "USDC".to_string(),
+    //             "USDT".to_string(),
+    //             "XAVA".to_string(),
+    //             "YAK".to_string(),
+    //             "YYAV3SA1".to_string(),
+    //             "YY_AAVE_AVAX".to_string(),
+    //             "YY_GLP".to_string(),
+    //             "YY_PNG_AVAX_ETH_LP".to_string(),
+    //             "YY_PNG_AVAX_USDC_LP".to_string(),
+    //             "YY_PTP_sAVAX".to_string(),
+    //             "YY_TJ_AVAX_ETH_LP".to_string(),
+    //             "YY_TJ_AVAX_USDC_LP".to_string(),
+    //             "YY_TJ_AVAX_sAVAX_LP".to_string(),
+    //             "sAVAX".to_string(),
+    //         ].to_vec(),
+    //         ["___ALL_FEEDS___".to_string()].to_vec(),
+    //     ).await;
+    //     println!("{:?}", result);
+    //     assert_ne!(result.get(0).unwrap(), "");
+    // }
+    //
+    // #[tokio::test]
+    // async fn it_works_for_a_package_multiple_call_data() {
+    //     let mut vec = Vec::new();
+    //     vec.push("".to_string());
+    //     vec.push("".to_string());
+    //     let result = get_packages(
+    //         vec,
+    //         3,
+    //         [
+    //             "AVAX".to_string(),
+    //             "BTC".to_string(),
+    //             "BUSD".to_string(),
+    //             "ETH".to_string(),
+    //             "GLP".to_string(),
+    //             "GMX".to_string(),
+    //             "JOE".to_string(),
+    //             "LINK".to_string(),
+    //             "MOO_TJ_AVAX_USDC_LP".to_string(),
+    //             "PNG".to_string(),
+    //             "PNG_AVAX_ETH_LP".to_string(),
+    //             "PNG_AVAX_USDC_LP".to_string(),
+    //             "PNG_AVAX_USDT_LP".to_string(),
+    //             "PTP".to_string(),
+    //             "QI".to_string(),
+    //             "TJ_AVAX_BTC_LP".to_string(),
+    //             "TJ_AVAX_ETH_LP".to_string(),
+    //             "TJ_AVAX_USDC_LP".to_string(),
+    //             "TJ_AVAX_USDT_LP".to_string(),
+    //             "TJ_AVAX_sAVAX_LP".to_string(),
+    //             "USDC".to_string(),
+    //             "USDT".to_string(),
+    //             "XAVA".to_string(),
+    //             "YAK".to_string(),
+    //             "YYAV3SA1".to_string(),
+    //             "YY_AAVE_AVAX".to_string(),
+    //             "YY_GLP".to_string(),
+    //             "YY_PNG_AVAX_ETH_LP".to_string(),
+    //             "YY_PNG_AVAX_USDC_LP".to_string(),
+    //             "YY_PTP_sAVAX".to_string(),
+    //             "YY_TJ_AVAX_ETH_LP".to_string(),
+    //             "YY_TJ_AVAX_USDC_LP".to_string(),
+    //             "YY_TJ_AVAX_sAVAX_LP".to_string(),
+    //             "sAVAX".to_string(),
+    //         ].to_vec(),
+    //         ["___ALL_FEEDS___".to_string()].to_vec(),
+    //     ).await;
+    //     println!("{:?}", result);
+    //     assert_eq!(result.len(), 2);
+    // }
+
     #[tokio::test]
-    async fn it_works_for_one_asset() {
-        let result = get_prices("".parse().unwrap(), ["AVAX"].to_vec(), "redstone-avalanche-prod-1".to_string(), [
-            "AVAX",
-            "BTC",
-            "ETH",
-            "FRAX",
-            "LINK",
-            "MOO_TJ_AVAX_USDC_LP",
-            "PNG",
-            "PNG_AVAX_USDC_LP",
-            "QI",
-            "SAV2",
-            "TJ_AVAX_USDC_LP",
-            "USDC",
-            "USDT",
-            "XAVA",
-            "YAK",
-            "YYAV3SA1",
-            "YY_TJ_AVAX_USDC_LP",
-            "sAVAX",
-        ].to_vec()).await;
-        assert_ne!(result, "");
+    async fn test_01() {
+        let result = generate_price_data(
+            &17.794888999999998
+        );
+        println!("{:?}", result);
+        assert_eq!(result, format!("{:0>64}", "6a10d884"));
     }
 
     #[tokio::test]
-    async fn it_works_for_two_assets() {
-        let result = get_prices("".parse().unwrap(), ["AVAX", "ETH"].to_vec(), "redstone-avalanche-prod-1".to_string(), [
-            "AVAX",
-            "BTC",
-            "ETH",
-            "FRAX",
-            "LINK",
-            "MOO_TJ_AVAX_USDC_LP",
-            "PNG",
-            "PNG_AVAX_USDC_LP",
-            "QI",
-            "SAV2",
-            "TJ_AVAX_USDC_LP",
-            "USDC",
-            "USDT",
-            "XAVA",
-            "YAK",
-            "YYAV3SA1",
-            "YY_TJ_AVAX_USDC_LP",
-            "sAVAX",
-        ].to_vec()).await;
+    async fn test_02() {
+        let result = generate_price_data(
+            &0.9999749975
+        );
         println!("{:?}", result);
-        assert_ne!(result, "");
+        assert_eq!(result, format!("{:0>64}", "5f5d73c"));
     }
 
     #[tokio::test]
-    async fn it_works_for_ten_assets() {
-        let result = get_prices("".parse().unwrap(), [
-            "AVAX",
-            "ETH",
-            "BTC",
-            "USDT",
-            "PNG",
-            "XAVA",
-            "LINK",
-            "YAK",
-            "QI",
-            "USDC",
-        ].to_vec(), "redstone-avalanche-prod-1".to_string(),
-                                [
-                                    "AVAX",
-                                    "BTC",
-                                    "ETH",
-                                    "FRAX",
-                                    "LINK",
-                                    "MOO_TJ_AVAX_USDC_LP",
-                                    "PNG",
-                                    "PNG_AVAX_USDC_LP",
-                                    "QI",
-                                    "SAV2",
-                                    "TJ_AVAX_USDC_LP",
-                                    "USDC",
-                                    "USDT",
-                                    "XAVA",
-                                    "YAK",
-                                    "YYAV3SA1",
-                                    "YY_TJ_AVAX_USDC_LP",
-                                    "sAVAX",
-                                ].to_vec()).await;
+    async fn test_03() {
+        let result = generate_price_data(
+            &0.7634302478595417
+        );
         println!("{:?}", result);
-        assert_ne!(result, "");
+        assert_eq!(result, format!("{:0>64}", "48ce6f1"));
     }
 
     #[tokio::test]
-    async fn it_works_for_a_package() {
-        let mut vec = Vec::new();
-        vec.push("".to_string());
-        let result = get_packages(
-            vec,
-            3,
-            [
-                "AVAX".to_string(),
-                "BTC".to_string(),
-                "BUSD".to_string(),
-                "ETH".to_string(),
-                "GLP".to_string(),
-                "GMX".to_string(),
-                "JOE".to_string(),
-                "LINK".to_string(),
-                "MOO_TJ_AVAX_USDC_LP".to_string(),
-                "PNG".to_string(),
-                "PNG_AVAX_ETH_LP".to_string(),
-                "PNG_AVAX_USDC_LP".to_string(),
-                "PNG_AVAX_USDT_LP".to_string(),
-                "PTP".to_string(),
-                "QI".to_string(),
-                "TJ_AVAX_BTC_LP".to_string(),
-                "TJ_AVAX_ETH_LP".to_string(),
-                "TJ_AVAX_USDC_LP".to_string(),
-                "TJ_AVAX_USDT_LP".to_string(),
-                "TJ_AVAX_sAVAX_LP".to_string(),
-                "USDC".to_string(),
-                "USDT".to_string(),
-                "XAVA".to_string(),
-                "YAK".to_string(),
-                "YYAV3SA1".to_string(),
-                "YY_AAVE_AVAX".to_string(),
-                "YY_GLP".to_string(),
-                "YY_PNG_AVAX_ETH_LP".to_string(),
-                "YY_PNG_AVAX_USDC_LP".to_string(),
-                "YY_PTP_sAVAX".to_string(),
-                "YY_TJ_AVAX_ETH_LP".to_string(),
-                "YY_TJ_AVAX_USDC_LP".to_string(),
-                "YY_TJ_AVAX_sAVAX_LP".to_string(),
-                "sAVAX".to_string(),
-            ].to_vec(),
-            ["___ALL_FEEDS___".to_string()].to_vec(),
-        ).await;
+    async fn test_04() {
+        let result = generate_price_data(
+            &7.169716899999999
+        );
         println!("{:?}", result);
-        assert_ne!(result.get(0).unwrap(), "");
+        assert_eq!(result, format!("{:0>64}", "2abc1eaa"));
     }
 
     #[tokio::test]
-    async fn it_works_for_a_package_multiple_call_data() {
-        let mut vec = Vec::new();
-        vec.push("".to_string());
-        vec.push("".to_string());
-        let result = get_packages(
-            vec,
-            3,
-            [
-                "AVAX".to_string(),
-                "BTC".to_string(),
-                "BUSD".to_string(),
-                "ETH".to_string(),
-                "GLP".to_string(),
-                "GMX".to_string(),
-                "JOE".to_string(),
-                "LINK".to_string(),
-                "MOO_TJ_AVAX_USDC_LP".to_string(),
-                "PNG".to_string(),
-                "PNG_AVAX_ETH_LP".to_string(),
-                "PNG_AVAX_USDC_LP".to_string(),
-                "PNG_AVAX_USDT_LP".to_string(),
-                "PTP".to_string(),
-                "QI".to_string(),
-                "TJ_AVAX_BTC_LP".to_string(),
-                "TJ_AVAX_ETH_LP".to_string(),
-                "TJ_AVAX_USDC_LP".to_string(),
-                "TJ_AVAX_USDT_LP".to_string(),
-                "TJ_AVAX_sAVAX_LP".to_string(),
-                "USDC".to_string(),
-                "USDT".to_string(),
-                "XAVA".to_string(),
-                "YAK".to_string(),
-                "YYAV3SA1".to_string(),
-                "YY_AAVE_AVAX".to_string(),
-                "YY_GLP".to_string(),
-                "YY_PNG_AVAX_ETH_LP".to_string(),
-                "YY_PNG_AVAX_USDC_LP".to_string(),
-                "YY_PTP_sAVAX".to_string(),
-                "YY_TJ_AVAX_ETH_LP".to_string(),
-                "YY_TJ_AVAX_USDC_LP".to_string(),
-                "YY_TJ_AVAX_sAVAX_LP".to_string(),
-                "sAVAX".to_string(),
-            ].to_vec(),
-            ["___ALL_FEEDS___".to_string()].to_vec(),
-        ).await;
+    async fn test_05() {
+        let result = generate_price_data(
+            &402.8773957895131
+        );
         println!("{:?}", result);
-        assert_eq!(result.len(), 2);
+        assert_eq!(result, format!("{:0>64}", "961561ebb"));
+    }
+
+    #[tokio::test]
+    async fn test_06() {
+        let result = generate_price_data(
+            &17.793025921341034
+        );
+        println!("{:?}", result);
+        assert_eq!(result, format!("{:0>64}", "06a0e00c0"));
+    }
+
+    #[tokio::test]
+    async fn test_07() {
+        let result = generate_price_data(
+            &0.7661840502549676
+        );
+        println!("{:?}", result);
+        assert_eq!(result, format!("{:0>64}", "4911aa5"));
+    }
+
+    #[tokio::test]
+    async fn test_08() {
+        let result = generate_price_data(
+            &17.857393000000002
+        );
+        println!("{:?}", result);
+        assert_eq!(result, format!("{:0>64}", "6a703824"));
+    }
+
+    #[tokio::test]
+    async fn test_09() {
+        let result = generate_price_data(
+            &17.401089935
+        );
+        println!("{:?}", result);
+        assert_eq!(result, format!("{:0>64}", "67b7f4c2"));
+    }
+
+    #[tokio::test]
+    async fn test_10() {
+        let result = generate_price_data(
+            &13182075.789543394
+        );
+        println!("{:?}", result);
+        assert_eq!(result, format!("{:0>64}", "4aee71e7bda63"));
+    }
+
+    #[tokio::test]
+    async fn test_11() {
+        let result = generate_price_data(
+            &133018818.04845291
+        );
+        println!("{:?}", result);
+        assert_eq!(result, format!("{:0>64}", "2f41fdb3d270eb"));
+    }
+
+    #[tokio::test]
+    async fn test_12() {
+        let result = generate_price_data(
+            &73.3536835295
+        );
+        println!("{:?}", result);
+        assert_eq!(result, format!("{:0>64}", "1b538d6a1"));
+    }
+
+
+    #[tokio::test]
+    async fn test_13() {
+        let result = generate_price_data(
+            &12661113.749657085
+        );
+        println!("{:?}", result);
+        assert_eq!(result, format!("{:0>64}", "47f8586c03bcd"));
+    }
+
+    #[tokio::test]
+    async fn test_14() {
+        let result = generate_price_data(
+            &131565122.2156839000000
+        );
+        println!("{:?}", result);
+        assert_eq!(result, format!("{:0>64}", "2ebdc735731d87"));
+    }
+
+    #[tokio::test]
+    async fn test_15() {
+        let result = generate_price_data(
+            &119635088.0526608100000
+        );
+        println!("{:?}", result);
+        assert_eq!(result, format!("{:0>64}", "2a80bf749aeaa1"));
+    }
+
+    #[tokio::test]
+    async fn test_16() {
+        let result = generate_price_data(
+            &11983087.205083525
+        );
+        println!("{:?}", result);
+        assert_eq!(result, format!("{:0>64}", "441dafd9dfdc0"));
+    }
+
+    #[tokio::test]
+    async fn test_17() {
+        let result = generate_price_data(
+            &111018938.69883847
+        );
+        println!("{:?}", result);
+        assert_eq!(result, format!("{:0>64}", "27711d1872d1c7"));
+    }
+
+    #[tokio::test]
+    async fn test_18() {
+        let result = generate_price_data(
+            &110462390.9453476
+        );
+        println!("{:?}", result);
+        assert_eq!(result, format!("{:0>64}", "273e7ef5557269"));
     }
 }
