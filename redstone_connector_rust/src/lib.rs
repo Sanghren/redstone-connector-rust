@@ -135,7 +135,7 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
         data += b32_hex_stripped;
 
-        // let num = Decimal::from_str(9074884.59613792.to_string().as_str()).unwrap();
+        // let num = Decimal::from_str(111018938.69883847.to_string().as_str()).unwrap();
         ; // 6a10d884
         // println!("RAW {} // STRING {}", value, value.to_string().as_str());
         let num = Decimal::from_str(value.to_string().as_str()).unwrap();
@@ -260,6 +260,7 @@ fn get_decimal_place(x: u32, num: Decimal) -> u64 {
     println!("AAA {}", shifted);
     println!("AAA {}", shifted.to_f64().unwrap());
     let truncated = shifted % Decimal::from_f64(10.0).unwrap();
+    println!("AAA {}", truncated);
     truncated.to_u64().unwrap()
 }
 
