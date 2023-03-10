@@ -135,7 +135,7 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
         let b32_hex_stripped = b32_hex.strip_prefix("0x").unwrap();
         data += b32_hex_stripped;
 
-        // let num = Decimal::from_str(131565122.21568390.to_string().as_str()).unwrap();
+        // let num = Decimal::from_str(9074884.59613792.to_string().as_str()).unwrap();
         ; // 6a10d884
         // println!("RAW {} // STRING {}", value, value.to_string().as_str());
         let num = Decimal::from_str(value.to_string().as_str()).unwrap();
@@ -158,6 +158,8 @@ pub fn get_lite_data_bytes_string(price_data: SerializedPriceData) -> String {
                 } else {
                     scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap()).floor() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).to_u128().unwrap();
                 }
+            } else {
+                scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap()).floor() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).to_u128().unwrap();
             }
         } else {
             scaled_num = (((num * Decimal::from_f64(100000000_f64).unwrap()).floor() / Decimal::from_f64(100000000_f64).unwrap()) * Decimal::from_f64(100000000_f64).unwrap()).to_u128().unwrap();
